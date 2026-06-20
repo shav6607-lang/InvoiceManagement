@@ -136,7 +136,7 @@ const Customers: React.FC = () => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Customers</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>Customers</Typography>
           <Typography variant="body2" color="text.secondary">Manage your customer master data</Typography>
         </Box>
         <Button id="add-customer-btn" variant="contained" startIcon={<PersonAdd />} onClick={openAdd}>
@@ -153,9 +153,7 @@ const Customers: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
             size="small"
             sx={{ mb: 2, minWidth: 320 }}
-            InputProps={{
-              startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment>,
-            }}
+            slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> } }}
           />
           <DataGrid
             rows={filtered}
@@ -182,7 +180,7 @@ const Customers: React.FC = () => {
               </Grid>
               <Grid size={12}>
                 <Controller name="gstin" control={control} render={({ field }) => (
-                  <TextField {...field} label="GSTIN" fullWidth error={!!errors.gstin} helperText={errors.gstin?.message || 'e.g. 29ABCDE1234F1Z5'} inputProps={{ style: { textTransform: 'uppercase' } }} />
+                  <TextField {...field} label="GSTIN" fullWidth error={!!errors.gstin} helperText={errors.gstin?.message || 'e.g. 29ABCDE1234F1Z5'} sx={{ '& .MuiInputBase-input': { textTransform: 'uppercase' } }} />
                 )} />
               </Grid>
               <Grid size={12}>

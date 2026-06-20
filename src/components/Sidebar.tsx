@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Drawer,
   List,
@@ -81,7 +80,7 @@ export const Sidebar: React.FC = () => {
           <BusinessIcon sx={{ color: '#ffffff', fontSize: 20 }} />
         </Box>
         <Box>
-          <Typography variant="h6" fontWeight="bold" sx={{ color: '#ffffff', lineHeight: 1.2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#ffffff', lineHeight: 1.2 }}>
             StoneCrush
           </Typography>
           <Typography variant="caption" sx={{ color: isLight ? 'rgba(255, 255, 255, 0.7)' : 'rgba(224, 242, 254, 0.6)' }}>
@@ -133,12 +132,8 @@ export const Sidebar: React.FC = () => {
                   >
                     {item.icon}
                   </ListItemIcon>
-                  <ListItemText 
-                    primary={item.text} 
-                    primaryTypographyProps={{ 
-                      fontWeight: isActive ? 600 : 500,
-                      fontSize: '0.9rem',
-                    }} 
+                  <ListItemText
+                    primary={<Typography sx={{ fontWeight: isActive ? 600 : 500, fontSize: '0.9rem' }}>{item.text}</Typography>}
                   />
                 </ListItemButton>
               </ListItem>
@@ -172,7 +167,7 @@ export const Sidebar: React.FC = () => {
           {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
         </Avatar>
         <Box sx={{ overflow: 'hidden', flexGrow: 1 }}>
-          <Typography variant="subtitle2" fontWeight={600} noWrap sx={{ color: '#ffffff', lineHeight: 1.2 }}>
+          <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
             {user?.name || 'Admin'}
           </Typography>
           <Typography

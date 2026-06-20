@@ -107,7 +107,7 @@ const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={20}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 2, p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-              <Typography variant="subtitle2" fontWeight={700} color="primary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle2" color="primary" gutterBottom sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Receipt fontSize="small" /> Description of Goods
               </Typography>
               <Table size="small">
@@ -346,7 +346,7 @@ const Invoices: React.FC = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography variant="h4" fontWeight={800} color="#111827">Delivery Challans</Typography>
+            <Typography variant="h4" sx={{ fontWeight: 800 }} color="#111827">Delivery Challans</Typography>
             {!error && invoices.length > 0 && (
               <Chip 
                 label="📡 API Data" 

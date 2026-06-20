@@ -207,7 +207,7 @@ const Materials: React.FC = () => {
       {/* ── Page Header ── */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box>
-          <Typography variant="h4" fontWeight={800} color="#111827">
+          <Typography variant="h4" sx={{ fontWeight: 800 }} color="#111827">
             Material Master
           </Typography>
           <Typography variant="body2" color="#6b7280">
@@ -242,13 +242,7 @@ const Materials: React.FC = () => {
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             size="small"
             sx={{ minWidth: 320 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
+            slotProps={{ input: { startAdornment: (<InputAdornment position="start"><Search fontSize="small" /></InputAdornment>) } }}
           />
           <Tooltip title="Refresh">
             <IconButton
@@ -433,7 +427,7 @@ const Materials: React.FC = () => {
               name="RatePerUnit"
               control={control}
               render={({ field }) => (
-                <TextField
+                  <TextField
                   {...field}
                   label="Rate Per Unit (₹) *"
                   type="number"
@@ -442,10 +436,7 @@ const Materials: React.FC = () => {
                   sx={{ mb: 2 }}
                   error={!!errors.RatePerUnit}
                   helperText={errors.RatePerUnit?.message}
-                  slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start">₹</InputAdornment>,
-                  }}
+                  slotProps={{ htmlInput: { min: 0, step: 0.01 }, input: { startAdornment: <InputAdornment position="start">₹</InputAdornment> } }}
                 />
               )}
             />
@@ -487,8 +478,8 @@ const Materials: React.FC = () => {
                       color="primary"
                     />
                   }
-                  label={
-                    <Typography variant="body2" fontWeight={600}>
+                    label={
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       Active
                     </Typography>
                   }

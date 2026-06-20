@@ -79,7 +79,7 @@ const Reports: React.FC = () => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Reports</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>Reports</Typography>
           <Typography variant="body2" color="text.secondary">Business analytics and tax summaries</Typography>
         </Box>
         <Button id="export-excel-btn" variant="outlined" startIcon={<Download />} onClick={exportSalesRegister}>
@@ -98,7 +98,7 @@ const Reports: React.FC = () => {
           <Card key={item.label} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', flex: 1, minWidth: 180 }}>
             <CardContent>
               <Typography variant="body2" color="text.secondary">{item.label}</Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: item.color }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: item.color }}>
                 ₹{item.value.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </Typography>
             </CardContent>
@@ -132,7 +132,7 @@ const Reports: React.FC = () => {
                   {invoices.map((inv) => (
                     <TableRow key={inv.id} hover>
                       <TableCell>{inv.invoiceDate}</TableCell>
-                      <TableCell><Typography color="primary.main" fontWeight={600}>{inv.invoiceNumber}</Typography></TableCell>
+                      <TableCell><Typography color="primary.main" sx={{ fontWeight: 600 }}>{inv.invoiceNumber}</Typography></TableCell>
                       <TableCell>{inv.buyerName || inv.consigneeName}</TableCell>
                       <TableCell align="right">₹{inv.subTotal.toFixed(2)}</TableCell>
                       <TableCell align="right">₹{(inv.totalCgst + inv.totalSgst + inv.totalIgst).toFixed(2)}</TableCell>
@@ -220,8 +220,8 @@ const Reports: React.FC = () => {
             </Table>
             <Divider sx={{ my: 2 }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2, bgcolor: 'primary.main', borderRadius: 2, color: 'white' }}>
-              <Typography fontWeight={700}>Grand Total (Incl. GST)</Typography>
-              <Typography fontWeight={700}>₹{grandTotal.toFixed(2)}</Typography>
+              <Typography sx={{ fontWeight: 700 }}>Grand Total (Incl. GST)</Typography>
+              <Typography sx={{ fontWeight: 700 }}>₹{grandTotal.toFixed(2)}</Typography>
             </Box>
           </TabPanel>
         </CardContent>

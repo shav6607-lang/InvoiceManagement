@@ -105,7 +105,7 @@ const Products: React.FC = () => {
     },
     {
       field: 'rate', headerName: 'Rate (₹)', width: 120,
-      renderCell: (p) => <Typography fontWeight={600}>₹{Number(p.value).toLocaleString('en-IN')}</Typography>
+      renderCell: (p) => <Typography sx={{ fontWeight: 600 }}>₹{Number(p.value).toLocaleString('en-IN')}</Typography>
     },
     {
       field: 'actions', headerName: 'Actions', width: 120, sortable: false,
@@ -126,7 +126,7 @@ const Products: React.FC = () => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Products</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>Products</Typography>
           <Typography variant="body2" color="text.secondary">Manage your product catalogue</Typography>
         </Box>
         <Button id="add-product-btn" variant="contained" startIcon={<Inventory2 />} onClick={openAdd}>
@@ -143,9 +143,7 @@ const Products: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
             size="small"
             sx={{ mb: 2, minWidth: 320 }}
-            InputProps={{
-              startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment>,
-            }}
+            slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> } }}
           />
           <DataGrid
             rows={filtered}

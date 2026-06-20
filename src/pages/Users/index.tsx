@@ -115,7 +115,7 @@ const Users: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Security color="primary" sx={{ fontSize: 32 }} />
           <Box>
-            <Typography variant="h4" fontWeight={700}>User Master</Typography>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>User Master</Typography>
             <Typography variant="body2" color="text.secondary">Manage application users and roles</Typography>
           </Box>
         </Box>
@@ -150,7 +150,7 @@ const Users: React.FC = () => {
 
       {/* User Form Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle fontWeight={600}>
+        <DialogTitle sx={{ fontWeight: 600 }}>
           {editingUser ? 'Edit User' : 'Add New User'}
         </DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>

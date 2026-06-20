@@ -10,7 +10,7 @@ import {
   TextField,
   MenuItem,
   IconButton,
-  Grid,
+  
 } from '@mui/material';
 import { Add, Search, Edit, Delete, Business } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
@@ -29,7 +29,7 @@ const companySchema = z.object({
   gstUinNo: z.string().optional(),
   state: z.string().min(1, 'State is required'),
   country: z.string().min(1, 'Country is required'),
-  email: z.string().email('Invalid Email').optional().or(z.literal('')),
+  email: z.string().email('Invalid Email').or(z.literal('')),
   phone: z.string().min(10, 'Invalid Phone Number'),
   bankDetails: z.string().optional(),
 });
@@ -127,7 +127,7 @@ const Companies: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Business color="primary" sx={{ fontSize: 32 }} />
           <Box>
-            <Typography variant="h4" fontWeight={700}>Company Master</Typography>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>Company Master</Typography>
             <Typography variant="body2" color="text.secondary">Manage multiple companies and their details</Typography>
           </Box>
         </Box>
@@ -162,7 +162,7 @@ const Companies: React.FC = () => {
 
       {/* Form Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle fontWeight={600}>
+        <DialogTitle sx={{ fontWeight: 600 }}>
           {editingCompany ? 'Edit Company' : 'Add New Company'}
         </DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -191,7 +191,7 @@ const Companies: React.FC = () => {
                   name="gstNo"
                   control={control}
                   render={({ field }) => (
-                    <TextField {...field} label="GST No" fullWidth inputProps={{ style: { textTransform: 'uppercase' } }} error={!!errors.gstNo} helperText={errors.gstNo?.message} />
+                    <TextField {...field} label="GST No" fullWidth error={!!errors.gstNo} helperText={errors.gstNo?.message} sx={{ '& .MuiInputBase-input': { textTransform: 'uppercase' } }} />
                   )}
                 />
               </Box>
@@ -200,7 +200,7 @@ const Companies: React.FC = () => {
                   name="gstUinNo"
                   control={control}
                   render={({ field }) => (
-                    <TextField {...field} label="GST UIN No" fullWidth inputProps={{ style: { textTransform: 'uppercase' } }} error={!!errors.gstUinNo} helperText={errors.gstUinNo?.message} />
+                    <TextField {...field} label="GST UIN No" fullWidth error={!!errors.gstUinNo} helperText={errors.gstUinNo?.message} sx={{ '& .MuiInputBase-input': { textTransform: 'uppercase' } }} />
                   )}
                 />
               </Box>
