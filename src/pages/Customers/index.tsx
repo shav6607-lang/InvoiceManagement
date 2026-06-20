@@ -10,7 +10,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Grid,
+  
   IconButton,
   InputAdornment,
   Chip,
@@ -36,6 +36,7 @@ import {
   type Customer,
 } from '../../redux/slices/customerSlice';
 import { v4 as uuidv4 } from 'uuid';
+import Grid from '@mui/material/Unstable_Grid2';
 
 const INDIAN_STATES = [
   'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat',
@@ -172,35 +173,35 @@ const Customers: React.FC = () => {
         <DialogTitle>{editingCustomer ? 'Edit Customer' : 'Add Customer'}</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
-            <Grid container spacing={2} mt={0}>
-              <Grid size={12}>
+            <Grid container spacing={2} sx={{ mt: 0 }}>
+              <Grid xs={12}>
                 <Controller name="name" control={control} render={({ field }) => (
                   <TextField {...field} label="Customer Name" fullWidth error={!!errors.name} helperText={errors.name?.message} />
                 )} />
               </Grid>
-              <Grid size={12}>
+              <Grid xs={12}>
                 <Controller name="gstin" control={control} render={({ field }) => (
                   <TextField {...field} label="GSTIN" fullWidth error={!!errors.gstin} helperText={errors.gstin?.message || 'e.g. 29ABCDE1234F1Z5'} sx={{ '& .MuiInputBase-input': { textTransform: 'uppercase' } }} />
                 )} />
               </Grid>
-              <Grid size={12}>
+              <Grid xs={12}>
                 <Controller name="address" control={control} render={({ field }) => (
                   <TextField {...field} label="Address" fullWidth multiline rows={2} error={!!errors.address} helperText={errors.address?.message} />
                 )} />
               </Grid>
-              <Grid size={6}>
+              <Grid xs={6}>
                 <Controller name="phoneNumber" control={control} render={({ field }) => (
                   <TextField {...field} label="Phone Number" fullWidth error={!!errors.phoneNumber} helperText={errors.phoneNumber?.message} />
                 )} />
               </Grid>
-              <Grid size={6}>
+              <Grid xs={6}>
                 <Controller name="state" control={control} render={({ field }) => (
                   <TextField {...field} label="State" select fullWidth error={!!errors.state} helperText={errors.state?.message}>
                     {INDIAN_STATES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                   </TextField>
                 )} />
               </Grid>
-              <Grid size={12}>
+              <Grid xs={12}>
                 <Controller name="email" control={control} render={({ field }) => (
                   <TextField {...field} label="Email (Optional)" fullWidth error={!!errors.email} helperText={errors.email?.message} />
                 )} />

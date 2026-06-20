@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Box, Typography, Button, Card, CardContent,
+  Box, Typography, Button, Card,
   IconButton, Chip, TextField, Dialog, DialogTitle,
   DialogContent, DialogActions, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow,
-  Paper, Collapse, Grid, TablePagination, Tooltip,
+  Paper, Collapse, TablePagination, Tooltip,
   CircularProgress
 } from '@mui/material';
+import Grid from '@mui/material/Unstable_Grid2';
 import {
   Add, Search, Visibility, Print,
   KeyboardArrowDown, KeyboardArrowUp, FileDownload,
@@ -393,7 +394,7 @@ const Invoices: React.FC = () => {
       >
         <Grid container spacing={2} alignItems="center">
 
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <TextField
               label="Invoice No."
               placeholder="Search Invoice Number"
@@ -405,7 +406,7 @@ const Invoices: React.FC = () => {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={2.5}>
+          <Grid xs={12} sm={6} md={2.5}>
             <TextField
               label="From Date"
               type="date"
@@ -414,11 +415,10 @@ const Invoices: React.FC = () => {
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
-              InputLabelProps={{ shrink: true }}
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={2.5}>
+          <Grid xs={12} sm={6} md={2.5}>
             <TextField
               label="To Date"
               type="date"
@@ -427,11 +427,10 @@ const Invoices: React.FC = () => {
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
-              InputLabelProps={{ shrink: true }}
             />
           </Grid>
 
-          <Grid item xs={12} md={3}>
+          <Grid xs={12} md={3}>
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
 
               <Tooltip title="Search">

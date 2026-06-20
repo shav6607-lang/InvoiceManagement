@@ -153,15 +153,13 @@ const Login: React.FC = () => {
                   error={!!errors.password}
                   helperText={errors.password?.message}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
+                  slotProps={{ input: { endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ) } }}
                 />
               )}
             />

@@ -81,7 +81,7 @@ const Materials: React.FC = () => {
 
   // ── Form ──
   const { control, handleSubmit, reset, formState: { errors } } = useForm<MaterialForm>({
-    resolver: zodResolver(materialSchema),
+    resolver: zodResolver(materialSchema) as any,
     defaultValues: {
       CompanyId: 0,
       MaterialName: '',

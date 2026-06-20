@@ -4,7 +4,7 @@ import {
   IconButton, Chip, TextField, Dialog, DialogTitle,
   DialogContent, DialogActions, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow,
-  Paper, Collapse, Grid, TablePagination, Tooltip,
+  Collapse, TablePagination, Tooltip,
   CircularProgress
 } from '@mui/material';
 import {
@@ -13,6 +13,7 @@ import {
   Clear, Receipt
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import Grid from '@mui/material/Unstable_Grid2';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { deleteInvoice, fetchInvoices, type Invoice } from '../../redux/slices/invoiceSlice';
 import { format } from 'date-fns';
@@ -219,7 +220,7 @@ const Invoices: React.FC = () => {
     setPage(0);
   };
 
-  const handleClearFilters = () => {
+  const _handleClearFilters = () => {
     setSearchQuery('');
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -282,10 +283,10 @@ const Invoices: React.FC = () => {
   };
 
   // Metric Totals
-  const totalCount = filteredInvoices.length;
-  const totalBillAmount = filteredInvoices.reduce((s, inv) => s + (inv.grandTotal || 0), 0);
-  const totalTaxable = filteredInvoices.reduce((s, inv) => s + (inv.subTotal || 0), 0);
-  const totalTaxAmount = filteredInvoices.reduce(
+  const _totalCount = filteredInvoices.length;
+  const _totalBillAmount = filteredInvoices.reduce((s, inv) => s + (inv.grandTotal || 0), 0);
+  const _totalTaxable = filteredInvoices.reduce((s, inv) => s + (inv.subTotal || 0), 0);
+  const _totalTaxAmount = filteredInvoices.reduce(
     (s, inv) => s + ((inv.totalCgst || 0) + (inv.totalSgst || 0) + (inv.totalIgst || 0)),
     0
   );
@@ -393,7 +394,7 @@ const Invoices: React.FC = () => {
       >
         <Grid container spacing={2} alignItems="center">
 
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <TextField
               label="DC Number" // Changed from "Invoice No."
               placeholder="Search DC Number" // Changed from "Search Invoice Number"
@@ -405,7 +406,7 @@ const Invoices: React.FC = () => {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={2.5}>
+          <Grid xs={12} sm={6} md={2.5}>
             <TextField
               label="From Date"
               type="date"
@@ -414,11 +415,10 @@ const Invoices: React.FC = () => {
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
-              InputLabelProps={{ shrink: true }}
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={2.5}>
+          <Grid xs={12} sm={6} md={2.5}>
             <TextField
               label="To Date"
               type="date"
@@ -427,11 +427,10 @@ const Invoices: React.FC = () => {
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
-              InputLabelProps={{ shrink: true }}
             />
           </Grid>
 
-          <Grid item xs={12} md={3}>
+          <Grid xs={12} md={3}>
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
 
               <Tooltip title="Search">

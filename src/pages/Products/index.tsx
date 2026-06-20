@@ -10,13 +10,13 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Grid,
   IconButton,
   InputAdornment,
   Chip,
   MenuItem,
 } from '@mui/material';
 import { Add, Search, Edit, Delete, Inventory2 } from '@mui/icons-material';
+import Grid from '@mui/material/Unstable_Grid2';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useForm, Controller } from 'react-hook-form';
@@ -53,7 +53,7 @@ const Products: React.FC = () => {
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<ProductForm>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(productSchema) as any,
     defaultValues: { name: '', hsnCode: '', unit: 'Ton', gstPercentage: 5, rate: 0 },
   });
 
@@ -163,31 +163,31 @@ const Products: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
             <Grid container spacing={2} mt={0}>
-              <Grid size={12}>
+              <Grid xs={12}>
                 <Controller name="name" control={control} render={({ field }) => (
                   <TextField {...field} label="Product Name" fullWidth error={!!errors.name} helperText={errors.name?.message} />
                 )} />
               </Grid>
-              <Grid size={6}>
+              <Grid xs={6}>
                 <Controller name="hsnCode" control={control} render={({ field }) => (
                   <TextField {...field} label="HSN Code" fullWidth error={!!errors.hsnCode} helperText={errors.hsnCode?.message} />
                 )} />
               </Grid>
-              <Grid size={6}>
+              <Grid xs={6}>
                 <Controller name="unit" control={control} render={({ field }) => (
                   <TextField {...field} label="Unit" select fullWidth error={!!errors.unit} helperText={errors.unit?.message}>
                     {UNITS.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
                   </TextField>
                 )} />
               </Grid>
-              <Grid size={6}>
+              <Grid xs={6}>
                 <Controller name="gstPercentage" control={control} render={({ field }) => (
                   <TextField {...field} label="GST %" select fullWidth error={!!errors.gstPercentage} helperText={errors.gstPercentage?.message}>
                     {GST_RATES.map((r) => <MenuItem key={r} value={r}>{r}%</MenuItem>)}
                   </TextField>
                 )} />
               </Grid>
-              <Grid size={6}>
+              <Grid xs={6}>
                 <Controller name="rate" control={control} render={({ field }) => (
                   <TextField {...field} label="Rate (₹ per Unit)" type="number" fullWidth error={!!errors.rate} helperText={errors.rate?.message} />
                 )} />

@@ -8,9 +8,9 @@ export interface Company {
   gstUinNo?: string;
   state: string;
   country: string;
-  email: string;
+  email?: string;
   phone: string;
-  bankDetails: string;
+  bankDetails?: string;
 }
 
 interface CompanyState {
