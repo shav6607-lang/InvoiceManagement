@@ -46,7 +46,7 @@ type Company = {
   ISFC: string;
 };
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://localhost:44354';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ;
 
 const HSN_CODES: Record<number, string> = {
   1: '2517',
@@ -54,43 +54,6 @@ const HSN_CODES: Record<number, string> = {
   3: '2505',
 };
 
-// const STATE_CODES: Record<string, string> = {
-//   'Andhra Pradesh': '28',
-//   'Arunachal Pradesh': '12',
-//   'Assam': '18',
-//   'Bihar': '10',
-//   'Chhattisgarh': '22',
-//   'Goa': '30',
-//   'Gujarat': '24',
-//   'Haryana': '06',
-//   'Himachal Pradesh': '02',
-//   'Jharkhand': '20',
-//   'Karnataka': '29',
-//   'Kerala': '32',
-//   'Madhya Pradesh': '23',
-//   'Maharashtra': '27',
-//   'Manipur': '14',
-//   'Meghalaya': '17',
-//   'Mizoram': '15',
-//   'Nagaland': '13',
-//   'Odisha': '21',
-//   'Punjab': '03',
-//   'Rajasthan': '08',
-//   'Sikkim': '11',
-//   'Tamil Nadu': '33',
-//   'Telangana': '36',
-//   'Tripura': '16',
-//   'Uttar Pradesh': '09',
-//   'Uttarakhand': '05',
-//   'West Bengal': '19',
-//   'Andaman and Nicobar Islands': '35',
-//   'Chandigarh': '04',
-//   'Dadra and Nagar Haveli and Daman and Diu': '26',
-//   'Lakshadweep': '31',
-//   'Delhi': '07',
-//   'Puducherry': '34',
-//   'Ladakh': '37',
-// };
 
 const genDCNo = () =>
   `DC/${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(2)}/${String(
@@ -130,7 +93,6 @@ const CreateDC: React.FC = () => {
   const [materials, setMaterials] = useState<any[]>([]);
   const [items, setItems] = useState<DCItem[]>([]);
   const [taxOption, setTaxOption] = useState<'none' | '5' | '18'>('none');
-  // const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -357,7 +319,7 @@ const CreateDC: React.FC = () => {
           mb: 3, 
           p: 1.5, 
           borderRadius: 2, 
-          border: '1px solid #e2e8f0', 
+          border: '1px solid #181a1e', 
           bgcolor: '#ffffff',
           boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.04)'
         }}
