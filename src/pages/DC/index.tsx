@@ -220,26 +220,7 @@ const Invoices: React.FC = () => {
     setPage(0);
   };
 
-  const _handleClearFilters = () => {
-    setSearchQuery('');
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const formatDate = (date: Date) => {
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    };
-    const fromVal = formatDate(firstDay);
-    const toVal = formatDate(today);
 
-    setFromDate(fromVal);
-    setToDate(toVal);
-    setFilterSearch('');
-    setFilterFromDate(fromVal);
-    setFilterToDate(toVal);
-    setPage(0);
-  };
 
   const filteredInvoices = invoices.filter((inv) => {
     const buyer = (inv.buyerName || (inv.sameAsConsignee ? inv.consigneeName : '') || '').toLowerCase();
@@ -282,14 +263,7 @@ const Invoices: React.FC = () => {
     setPage(0);
   };
 
-  // Metric Totals
-  const _totalCount = filteredInvoices.length;
-  const _totalBillAmount = filteredInvoices.reduce((s, inv) => s + (inv.grandTotal || 0), 0);
-  const _totalTaxable = filteredInvoices.reduce((s, inv) => s + (inv.subTotal || 0), 0);
-  const _totalTaxAmount = filteredInvoices.reduce(
-    (s, inv) => s + ((inv.totalCgst || 0) + (inv.totalSgst || 0) + (inv.totalIgst || 0)),
-    0
-  );
+  
 
   // Excel Format CSV Exporter
   const handleExportToCSV = () => {
