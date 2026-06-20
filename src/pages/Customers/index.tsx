@@ -171,40 +171,105 @@ const Customers: React.FC = () => {
         <DialogTitle>{editingCustomer ? 'Edit Customer' : 'Add Customer'}</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
-            <Grid container spacing={2} sx={{ mt: 0 }}>
-              <Grid xs={12}>
-                <Controller name="name" control={control} render={({ field }) => (
-                  <TextField {...field} label="Customer Name" fullWidth error={!!errors.name} helperText={errors.name?.message} />
-                )} />
-              </Grid>
-              <Grid xs={12}>
-                <Controller name="gstin" control={control} render={({ field }) => (
-                  <TextField {...field} label="GSTIN" fullWidth error={!!errors.gstin} helperText={errors.gstin?.message || 'e.g. 29ABCDE1234F1Z5'} sx={{ '& .MuiInputBase-input': { textTransform: 'uppercase' } }} />
-                )} />
-              </Grid>
-              <Grid xs={12}>
-                <Controller name="address" control={control} render={({ field }) => (
-                  <TextField {...field} label="Address" fullWidth multiline rows={2} error={!!errors.address} helperText={errors.address?.message} />
-                )} />
-              </Grid>
-              <Grid xs={6}>
-                <Controller name="phoneNumber" control={control} render={({ field }) => (
-                  <TextField {...field} label="Phone Number" fullWidth error={!!errors.phoneNumber} helperText={errors.phoneNumber?.message} />
-                )} />
-              </Grid>
-              <Grid xs={6}>
-                <Controller name="state" control={control} render={({ field }) => (
-                  <TextField {...field} label="State" select fullWidth error={!!errors.state} helperText={errors.state?.message}>
-                    {INDIAN_STATES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-                  </TextField>
-                )} />
-              </Grid>
-              <Grid xs={12}>
-                <Controller name="email" control={control} render={({ field }) => (
-                  <TextField {...field} label="Email (Optional)" fullWidth error={!!errors.email} helperText={errors.email?.message} />
-                )} />
-              </Grid>
-            </Grid>
+         <DialogContent>
+  <Box
+    sx={{
+      mt: 0,
+      display: 'grid',
+      gridTemplateColumns: 'repeat(12, 1fr)',
+      gap: 2
+    }}
+  >
+    <Box sx={{ gridColumn: 'span 12' }}>
+      <Controller
+        name="name"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="Customer Name"
+            fullWidth
+            error={!!errors.name}
+            helperText={errors.name?.message}
+          />
+        )}
+      />
+    </Box>
+
+    <Box sx={{ gridColumn: 'span 12' }}>
+      <Controller
+        name="address"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="Address"
+            fullWidth
+            multiline
+            rows={2}
+            error={!!errors.address}
+            helperText={errors.address?.message}
+          />
+        )}
+      />
+    </Box>
+
+    <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
+      <Controller
+        name="phoneNumber"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="Phone Number"
+            fullWidth
+            error={!!errors.phoneNumber}
+            helperText={errors.phoneNumber?.message}
+          />
+        )}
+      />
+    </Box>
+
+    <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
+      <Controller
+        name="state"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="State"
+            select
+            fullWidth
+            error={!!errors.state}
+            helperText={errors.state?.message}
+          >
+            {INDIAN_STATES.map((s) => (
+              <MenuItem key={s} value={s}>
+                {s}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
+      />
+    </Box>
+
+    <Box sx={{ gridColumn: 'span 12' }}>
+      <Controller
+        name="email"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="Email (Optional)"
+            fullWidth
+            error={!!errors.email}
+            helperText={errors.email?.message}
+          />
+        )}
+      />
+    </Box>
+  </Box>
+</DialogContent>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>
             <Button onClick={() => setOpen(false)}>Cancel</Button>

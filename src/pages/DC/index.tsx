@@ -13,7 +13,7 @@ import {
   Clear, Receipt
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/Grid';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { deleteInvoice, fetchInvoices, type Invoice } from '../../redux/slices/invoiceSlice';
 import { format } from 'date-fns';
@@ -392,75 +392,78 @@ const Invoices: React.FC = () => {
           backgroundColor: '#fff'
         }}
       >
-        <Grid container spacing={2} alignItems="center">
+       <Box
+  sx={{
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' },
+    gap: 2,
+    alignItems: 'center',
+  }}
+>
+  {/* DC Number */}
+  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
+    <TextField
+      label="DC Number"
+      placeholder="Search DC Number"
+      fullWidth
+      size="small"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+    />
+  </Box>
 
-          <Grid xs={12} md={4}>
-            <TextField
-              label="DC Number" // Changed from "Invoice No."
-              placeholder="Search DC Number" // Changed from "Search Invoice Number"
-              fullWidth
-              size="small"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
-          </Grid>
+  {/* From Date */}
+  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
+    <TextField
+      label="From Date"
+      type="date"
+      size="small"
+      fullWidth
+      value={fromDate}
+      onChange={(e) => setFromDate(e.target.value)}
+      slotProps={{ inputLabel: { shrink: true } }}
+    />
+  </Box>
 
-          <Grid xs={12} sm={6} md={2.5}>
-            <TextField
-              label="From Date"
-              type="date"
-              size="small"
-              fullWidth
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
-          </Grid>
+  {/* To Date */}
+  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
+    <TextField
+      label="To Date"
+      type="date"
+      size="small"
+      fullWidth
+      value={toDate}
+      onChange={(e) => setToDate(e.target.value)}
+      slotProps={{ inputLabel: { shrink: true } }}
+    />
+  </Box>
 
-          <Grid xs={12} sm={6} md={2.5}>
-            <TextField
-              label="To Date"
-              type="date"
-              size="small"
-              fullWidth
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
-          </Grid>
+  {/* Buttons */}
+  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
+    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+      <Tooltip title="Search">
+        <IconButton
+          color="primary"
+          onClick={handleSearch}
+          sx={{ border: '1px solid', borderColor: 'primary.main' }}
+        >
+          <Search />
+        </IconButton>
+      </Tooltip>
 
-          <Grid xs={12} md={3}>
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-
-              <Tooltip title="Search">
-                <IconButton
-                  color="primary"
-                  onClick={handleSearch}
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'primary.main'
-                  }}
-                >
-                  <Search />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Download Excel">
-                <IconButton
-                  color="success"
-                  onClick={handleExportToCSV}
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'success.main'
-                  }}
-                >
-                  <FileDownload />
-                </IconButton>
-              </Tooltip>
-
-            </Box>
-          </Grid>
-        </Grid>
+      <Tooltip title="Download Excel">
+        <IconButton
+          color="success"
+          onClick={handleExportToCSV}
+          sx={{ border: '1px solid', borderColor: 'success.main' }}
+        >
+          <FileDownload />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  </Box>
+</Box>
       </Card>
 
       {/* ── Collapsible Grid View Table ── */}

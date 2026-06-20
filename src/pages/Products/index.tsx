@@ -16,7 +16,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import { Add, Search, Edit, Delete, Inventory2 } from '@mui/icons-material';
-import Grid from '@mui/material/Unstable_Grid2';
+
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useForm, Controller } from 'react-hook-form';
@@ -161,39 +161,106 @@ const Products: React.FC = () => {
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editingProduct ? 'Edit Product' : 'Add Product'}</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogContent>
-            <Grid container spacing={2} mt={0}>
-              <Grid xs={12}>
-                <Controller name="name" control={control} render={({ field }) => (
-                  <TextField {...field} label="Product Name" fullWidth error={!!errors.name} helperText={errors.name?.message} />
-                )} />
-              </Grid>
-              <Grid xs={6}>
-                <Controller name="hsnCode" control={control} render={({ field }) => (
-                  <TextField {...field} label="HSN Code" fullWidth error={!!errors.hsnCode} helperText={errors.hsnCode?.message} />
-                )} />
-              </Grid>
-              <Grid xs={6}>
-                <Controller name="unit" control={control} render={({ field }) => (
-                  <TextField {...field} label="Unit" select fullWidth error={!!errors.unit} helperText={errors.unit?.message}>
-                    {UNITS.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                  </TextField>
-                )} />
-              </Grid>
-              <Grid xs={6}>
-                <Controller name="gstPercentage" control={control} render={({ field }) => (
-                  <TextField {...field} label="GST %" select fullWidth error={!!errors.gstPercentage} helperText={errors.gstPercentage?.message}>
-                    {GST_RATES.map((r) => <MenuItem key={r} value={r}>{r}%</MenuItem>)}
-                  </TextField>
-                )} />
-              </Grid>
-              <Grid xs={6}>
-                <Controller name="rate" control={control} render={({ field }) => (
-                  <TextField {...field} label="Rate (₹ per Unit)" type="number" fullWidth error={!!errors.rate} helperText={errors.rate?.message} />
-                )} />
-              </Grid>
-            </Grid>
-          </DialogContent>
+          {/* <DialogContent>
+             <Box display="flex" flexWrap="wrap" gap={2} mt={0}>
+  
+  <Box width="100%">
+    <Controller
+      name="name"
+      control={control}
+      render={({ field }) => (
+        <TextField
+          {...field}
+          label="Product Name"
+          fullWidth
+          error={!!errors.name}
+          helperText={errors.name?.message}
+        />
+      )}
+    />
+  </Box>
+
+  <Box width={{ xs: "100%", sm: "calc(50% - 8px)" }}>
+    <Controller
+      name="hsnCode"
+      control={control}
+      render={({ field }) => (
+        <TextField
+          {...field}
+          label="HSN Code"
+          fullWidth
+          error={!!errors.hsnCode}
+          helperText={errors.hsnCode?.message}
+        />
+      )}
+    />
+  </Box>
+
+  <Box width={{ xs: "100%", sm: "calc(50% - 8px)" }}>
+    <Controller
+      name="unit"
+      control={control}
+      render={({ field }) => (
+        <TextField
+          {...field}
+          label="Unit"
+          select
+          fullWidth
+          error={!!errors.unit}
+          helperText={errors.unit?.message}
+        >
+          {UNITS.map((u) => (
+            <MenuItem key={u} value={u}>
+              {u}
+            </MenuItem>
+          ))}
+        </TextField>
+      )}
+    />
+  </Box>
+
+  <Box width={{ xs: "100%", sm: "calc(50% - 8px)" }}>
+    <Controller
+      name="gstPercentage"
+      control={control}
+      render={({ field }) => (
+        <TextField
+          {...field}
+          label="GST %"
+          select
+          fullWidth
+          error={!!errors.gstPercentage}
+          helperText={errors.gstPercentage?.message}
+        >
+          {GST_RATES.map((r) => (
+            <MenuItem key={r} value={r}>
+              {r}%
+            </MenuItem>
+          ))}
+        </TextField>
+      )}
+    />
+  </Box>
+
+  <Box width={{ xs: "100%", sm: "calc(50% - 8px)" }}>
+    <Controller
+      name="rate"
+      control={control}
+      render={({ field }) => (
+        <TextField
+          {...field}
+          label="Rate (₹ per Unit)"
+          type="number"
+          fullWidth
+          error={!!errors.rate}
+          helperText={errors.rate?.message}
+        />
+      )}
+    />
+  </Box>
+
+</Box>
+          </DialogContent> */}
           <DialogActions sx={{ px: 3, pb: 3 }}>
             <Button onClick={() => setOpen(false)}>Cancel</Button>
             <Button type="submit" variant="contained" startIcon={<Add />}>

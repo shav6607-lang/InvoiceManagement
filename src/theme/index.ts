@@ -48,11 +48,11 @@ const baseOptions: ThemeOptions = {
           '&:hover': {
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
           },
-        },
-        containedPrimary: {
-          background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-          '&:hover': {
-            background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+          '&.MuiButton-containedPrimary': {
+            background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+            },
           },
         },
       },

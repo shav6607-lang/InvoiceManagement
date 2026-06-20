@@ -7,7 +7,7 @@ import {
   Paper, Collapse, TablePagination, Tooltip,
   CircularProgress
 } from '@mui/material';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/Grid';
 import {
   Add, Search, Visibility, Print,
   KeyboardArrowDown, KeyboardArrowUp, FileDownload,
@@ -392,75 +392,60 @@ const Invoices: React.FC = () => {
           backgroundColor: '#fff'
         }}
       >
-        <Grid container spacing={2} alignItems="center">
+      <Box
+  sx={{
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' },
+    gap: 2,
+    alignItems: 'center',
+  }}
+>
+  {/* Invoice No. (md spans 1 column block) */}
+  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
+    <TextField
+      label="Invoice No."
+      placeholder="Search Invoice Number"
+      fullWidth
+      size="small"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+    />
+  </Box>
 
-          <Grid xs={12} md={4}>
-            <TextField
-              label="Invoice No."
-              placeholder="Search Invoice Number"
-              fullWidth
-              size="small"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
-          </Grid>
+  {/* From Date */}
+  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
+    <TextField
+      label="From Date"
+      type="date"
+      size="small"
+      fullWidth
+      value={fromDate}
+      onChange={(e) => setFromDate(e.target.value)}
+      slotProps={{ inputLabel: { shrink: true } }}
+    />
+  </Box>
 
-          <Grid xs={12} sm={6} md={2.5}>
-            <TextField
-              label="From Date"
-              type="date"
-              size="small"
-              fullWidth
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
-          </Grid>
+  {/* To Date */}
+  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
+    <TextField
+      label="To Date"
+      type="date"
+      size="small"
+      fullWidth
+      value={toDate}
+      onChange={(e) => setToDate(e.target.value)}
+      slotProps={{ inputLabel: { shrink: true } }}
+    />
+  </Box>
 
-          <Grid xs={12} sm={6} md={2.5}>
-            <TextField
-              label="To Date"
-              type="date"
-              size="small"
-              fullWidth
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
-          </Grid>
-
-          <Grid xs={12} md={3}>
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-
-              <Tooltip title="Search">
-                <IconButton
-                  color="primary"
-                  onClick={handleSearch}
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'primary.main'
-                  }}
-                >
-                  <Search />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Download Excel">
-                <IconButton
-                  color="success"
-                  onClick={handleExportToCSV}
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'success.main'
-                  }}
-                >
-                  <FileDownload />
-                </IconButton>
-              </Tooltip>
-
-            </Box>
-          </Grid>
-        </Grid>
+  {/* Buttons */}
+  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
+    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+      ...
+    </Box>
+  </Box>
+</Box>
       </Card>
 
       {/* ── Collapsible Grid View Table ── */}

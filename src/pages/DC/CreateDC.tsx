@@ -54,43 +54,43 @@ const HSN_CODES: Record<number, string> = {
   3: '2505',
 };
 
-const STATE_CODES: Record<string, string> = {
-  'Andhra Pradesh': '28',
-  'Arunachal Pradesh': '12',
-  'Assam': '18',
-  'Bihar': '10',
-  'Chhattisgarh': '22',
-  'Goa': '30',
-  'Gujarat': '24',
-  'Haryana': '06',
-  'Himachal Pradesh': '02',
-  'Jharkhand': '20',
-  'Karnataka': '29',
-  'Kerala': '32',
-  'Madhya Pradesh': '23',
-  'Maharashtra': '27',
-  'Manipur': '14',
-  'Meghalaya': '17',
-  'Mizoram': '15',
-  'Nagaland': '13',
-  'Odisha': '21',
-  'Punjab': '03',
-  'Rajasthan': '08',
-  'Sikkim': '11',
-  'Tamil Nadu': '33',
-  'Telangana': '36',
-  'Tripura': '16',
-  'Uttar Pradesh': '09',
-  'Uttarakhand': '05',
-  'West Bengal': '19',
-  'Andaman and Nicobar Islands': '35',
-  'Chandigarh': '04',
-  'Dadra and Nagar Haveli and Daman and Diu': '26',
-  'Lakshadweep': '31',
-  'Delhi': '07',
-  'Puducherry': '34',
-  'Ladakh': '37',
-};
+// const STATE_CODES: Record<string, string> = {
+//   'Andhra Pradesh': '28',
+//   'Arunachal Pradesh': '12',
+//   'Assam': '18',
+//   'Bihar': '10',
+//   'Chhattisgarh': '22',
+//   'Goa': '30',
+//   'Gujarat': '24',
+//   'Haryana': '06',
+//   'Himachal Pradesh': '02',
+//   'Jharkhand': '20',
+//   'Karnataka': '29',
+//   'Kerala': '32',
+//   'Madhya Pradesh': '23',
+//   'Maharashtra': '27',
+//   'Manipur': '14',
+//   'Meghalaya': '17',
+//   'Mizoram': '15',
+//   'Nagaland': '13',
+//   'Odisha': '21',
+//   'Punjab': '03',
+//   'Rajasthan': '08',
+//   'Sikkim': '11',
+//   'Tamil Nadu': '33',
+//   'Telangana': '36',
+//   'Tripura': '16',
+//   'Uttar Pradesh': '09',
+//   'Uttarakhand': '05',
+//   'West Bengal': '19',
+//   'Andaman and Nicobar Islands': '35',
+//   'Chandigarh': '04',
+//   'Dadra and Nagar Haveli and Daman and Diu': '26',
+//   'Lakshadweep': '31',
+//   'Delhi': '07',
+//   'Puducherry': '34',
+//   'Ladakh': '37',
+// };
 
 const genDCNo = () =>
   `DC/${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(2)}/${String(
@@ -130,7 +130,7 @@ const CreateDC: React.FC = () => {
   const [materials, setMaterials] = useState<any[]>([]);
   const [items, setItems] = useState<DCItem[]>([]);
   const [taxOption, setTaxOption] = useState<'none' | '5' | '18'>('none');
-  const [saving, setSaving] = useState(false);
+  // const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -233,7 +233,7 @@ const CreateDC: React.FC = () => {
 
   const onSubmit = handleSubmit(async (data) => {
     setApiError(null);
-    setSaving(true);
+    // setSaving(true);
 
     const taxRate = taxOption === 'none' ? 0 : Number(taxOption);
     const cgstPer = taxOption === '5' ? 2.5 : 0;
@@ -331,7 +331,7 @@ const CreateDC: React.FC = () => {
     } catch (error: any) {
       setApiError(error?.message || 'Unable to submit delivery challan.');
     } finally {
-      setSaving(false);
+      // setSaving(false);
     }
   });
 

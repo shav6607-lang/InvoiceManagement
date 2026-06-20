@@ -291,7 +291,7 @@ const Materials: React.FC = () => {
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                     <CircularProgress size={32} />
-                    <Typography color="text.secondary" mt={1}>Loading materials…</Typography>
+                    <Typography color="text.secondary" sx={{ mt: 2 }}>Loading materials…</Typography>
                   </TableCell>
                 </TableRow>
               ) : paginated.length === 0 ? (
