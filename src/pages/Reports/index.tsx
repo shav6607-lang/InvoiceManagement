@@ -9,9 +9,9 @@ import { useAppSelector } from '../../redux/hooks';
 import * as XLSX from 'xlsx';
 
 interface TabPanelProps { children?: React.ReactNode; index: number; value: number; }
-const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => (
+const TabPanel: React.FC<TabPanelProps> = ({  value, index }) => (
   <div role="tabpanel" hidden={value !== index}>
-    {value === index && <Box pt={3}>{children}</Box>}
+    {value === index }
   </div>
 );
 
