@@ -7,8 +7,6 @@ import { useAppSelector } from '../redux/hooks';
 // Lazy load pages for better performance
 const Login = React.lazy(() => import('../pages/Login/index'));
 const Dashboard = React.lazy(() => import('../pages/Dashboard/index'));
-const Customers = React.lazy(() => import('../pages/Customers/index'));
-const Products = React.lazy(() => import('../pages/Products/index'));
 const InvoiceList = React.lazy(() => import('../pages/Invoices/index'));
 const CreateInvoice = React.lazy(() => import('../pages/Invoices/CreateInvoice'));
 const DCList = React.lazy(() => import('../pages/DC/index'));
@@ -48,8 +46,6 @@ export const AppRoutes: React.FC = () => {
           }
         >
           <Route path="/" element={<Dashboard />} />
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/products" element={<Products />} />
           <Route path="/invoices" element={<InvoiceList />} />
           <Route path="/invoices/create" element={<CreateInvoice />} />
           <Route path="/dc" element={<DCList />} />

@@ -15,7 +15,6 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { setCredentials } from '../../redux/slices/authSlice';
 import { invoiceAPI } from '../../services/api';
@@ -49,7 +48,6 @@ const Login: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
     setError(null);
-    const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) || 'https://localhost:44354';
 
     try {
       const response = await invoiceAPI.login(data.username, data.password);

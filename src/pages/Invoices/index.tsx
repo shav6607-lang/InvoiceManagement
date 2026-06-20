@@ -4,12 +4,12 @@ import {
   IconButton, Chip, TextField, Dialog, DialogTitle,
   DialogContent, DialogActions, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow,
-  Paper, Collapse, TablePagination, Tooltip,
+   Collapse, TablePagination, Tooltip,
   CircularProgress
 } from '@mui/material';
-import Grid from '@mui/material/Grid';
+
 import {
-  Add, Search, Visibility, Print,
+  Add, Visibility, Print,
   KeyboardArrowDown, KeyboardArrowUp, FileDownload,
   Clear, Receipt
 } from '@mui/icons-material';
@@ -220,26 +220,7 @@ const Invoices: React.FC = () => {
     setPage(0);
   };
 
-  const handleClearFilters = () => {
-    setSearchQuery('');
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const formatDate = (date: Date) => {
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    };
-    const fromVal = formatDate(firstDay);
-    const toVal = formatDate(today);
 
-    setFromDate(fromVal);
-    setToDate(toVal);
-    setFilterSearch('');
-    setFilterFromDate(fromVal);
-    setFilterToDate(toVal);
-    setPage(0);
-  };
 
   const filteredInvoices = invoices.filter((inv) => {
     const buyer = (inv.buyerName || (inv.sameAsConsignee ? inv.consigneeName : '') || '').toLowerCase();
@@ -282,64 +263,8 @@ const Invoices: React.FC = () => {
     setPage(0);
   };
 
-  // Metric Totals
-  const totalCount = filteredInvoices.length;
-  const totalBillAmount = filteredInvoices.reduce((s, inv) => s + (inv.grandTotal || 0), 0);
-  const totalTaxable = filteredInvoices.reduce((s, inv) => s + (inv.subTotal || 0), 0);
-  const totalTaxAmount = filteredInvoices.reduce(
-    (s, inv) => s + ((inv.totalCgst || 0) + (inv.totalSgst || 0) + (inv.totalIgst || 0)),
-    0
-  );
 
-  // Excel Format CSV Exporter
-  const handleExportToCSV = () => {
-    const headers = [
-      'Invoice No', 'Invoice Date', 'Buyer Name', 'Address', 'Phone', 'GSTIN', 'URN',
-      'State', 'State Code', 'Dispatch Through', 'Destination', 'Vehicle No', 'Weightment No',
-      'CGST %', 'SGST %', 'IGST %', 'Tax %', 'Total Amount', 'Bill Amount'
-    ];
-
-    const rows = filteredInvoices.map((inv) => {
-      const buyer = inv.buyerName || (inv.sameAsConsignee ? inv.consigneeName : '');
-      const addr = inv.buyerAddress || (inv.sameAsConsignee ? inv.consigneeAddress : '');
-      const ph = inv.buyerPhone || (inv.sameAsConsignee ? inv.consigneePhone : '');
-      const gst = inv.buyerGstin || (inv.sameAsConsignee ? inv.consigneeGstin : '');
-      const st = inv.buyerState || (inv.sameAsConsignee ? inv.consigneeState : '');
-      const stc = inv.buyerStateCode || (inv.sameAsConsignee ? inv.consigneeStateCode : '');
-      return [
-        inv.invoiceNumber,
-        inv.invoiceDate,
-        buyer,
-        addr,
-        ph,
-        gst,
-        inv.urn ? 'YES' : 'NO',
-        st,
-        stc,
-        inv.dispatchedThrough || '',
-        inv.destination || '',
-        inv.vehicleNumber || '',
-        inv.weightmentNo || '',
-        inv.cgstPer || 0,
-        inv.sgstPer || 0,
-        inv.igstPer || 0,
-        inv.taxPer || 0,
-        inv.subTotal || 0,
-        inv.grandTotal || 0
-      ];
-    });
-
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF'
-      + [headers.join(','), ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\r\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `invoices_excel_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+ 
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, fontFamily: "'Inter', sans-serif" }}>

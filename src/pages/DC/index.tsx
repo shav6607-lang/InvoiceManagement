@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Box, Typography, Button, Card, CardContent,
+  Box, Typography, Button, Card, 
   IconButton, Chip, TextField, Dialog, DialogTitle,
   DialogContent, DialogActions, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow,
@@ -13,7 +13,6 @@ import {
   Clear, Receipt
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import Grid from '@mui/material/Grid';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { deleteInvoice, fetchInvoices, type Invoice } from '../../redux/slices/invoiceSlice';
 import { format } from 'date-fns';
