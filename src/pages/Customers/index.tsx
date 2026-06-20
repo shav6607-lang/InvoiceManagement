@@ -36,8 +36,6 @@ import {
   type Customer,
 } from '../../redux/slices/customerSlice';
 import { v4 as uuidv4 } from 'uuid';
-import Grid from '@mui/material/Unstable_Grid2';
-
 const INDIAN_STATES = [
   'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat',
   'Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh',
