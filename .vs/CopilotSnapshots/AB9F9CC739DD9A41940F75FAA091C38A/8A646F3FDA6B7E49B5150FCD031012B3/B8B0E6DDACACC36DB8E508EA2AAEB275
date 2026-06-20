@@ -1,0 +1,156 @@
+﻿import React, { useState } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  InputAdornment,
+  IconButton,
+  Alert,
+  Divider,
+} from '@mui/material';
+import { Visibility, VisibilityOff, BusinessCenter } from '@mui/icons-material';
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch } from '../../redux/hooks';
+import { setCredentials } from '../../redux/slices/authSlice';
+
+const loginSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+const Login: React.FC = () => {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { username: '', password: '' },
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
+    setLoading(true);
+    setError(null);
+    // Mock authentication
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    if (data.username === 'admin' && data.password === 'admin123') {
+      dispatch(setCredentials({
+        user: { id: '1', name: 'Admin User', email: 'admin@stonecrush.com', role: 'admin' },
+        token: 'mock-jwt-token-xyz',
+      }));
+      navigate('/');
+    } else {
+      setError('Invalid credentials. Try admin / admin123');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <Box sx={{ width: '100%', maxWidth: 440, px: 2 }}>
+      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
+        <CardContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 44, height: 44, borderRadius: 2,
+                background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <BusinessCenter sx={{ color: 'white', fontSize: 22 }} />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={700}>StoneCrush</Typography>
+              <Typography variant="body2" color="text.secondary">GST Invoice Management</Typography>
+            </Box>
+          </Box>
+
+          <Typography variant="h5" fontWeight={700} mb={0.5}>Welcome back</Typography>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Sign in to your account to continue
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
+          )}
+
+          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            <Controller
+              name="username"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Username"
+                  id="login-username"
+                  fullWidth
+                  margin="normal"
+                  error={!!errors.username}
+                  helperText={errors.username?.message}
+                  autoFocus
+                />
+              )}
+            />
+            <Controller
+              name="password"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Password"
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  fullWidth
+                  margin="normal"
+                  error={!!errors.password}
+                  helperText={errors.password?.message}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
+            <Button
+              id="login-submit-btn"
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              loading={loading}
+              sx={{ mt: 3, mb: 2, py: 1.5 }}
+            >
+              Sign In
+            </Button>
+          </form>
+
+          <Divider sx={{ my: 2 }}>
+            <Typography variant="caption" color="text.secondary">Demo credentials</Typography>
+          </Divider>
+          <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Username: <strong>admin</strong> &nbsp;|&nbsp; Password: <strong>admin123</strong>
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+};
+
+export default Login;
