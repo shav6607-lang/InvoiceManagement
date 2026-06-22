@@ -46,7 +46,7 @@ type Company = {
 import { addInvoice, type InvoiceItem } from '../../redux/slices/invoiceSlice';
 import { v4 as uuidv4 } from 'uuid';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://localhost:44354';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ;
 
 const HSN_CODES: Record<number, string> = {
   1: '2517',

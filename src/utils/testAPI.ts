@@ -5,7 +5,7 @@ import axios from 'axios';
  * Run this in browser console to debug
  */
 async function testInvoiceAPI() {
-  const API_BASE_URL = 'https://localhost:44354/api';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
   const token = localStorage.getItem('token');
 
   console.log('🧪 Testing Invoice API...');
@@ -65,7 +65,6 @@ async function testInvoiceAPI() {
   console.log('\n⚠️ All authentication methods failed!');
   console.log('Please check:');
   console.log('1. Is the token valid from your backend?');
-  console.log('2. Is the API endpoint correct: https://localhost:44354/api/Invoice/GetInvoiceList');
   console.log('3. What authentication method does your backend expect?');
 }
 

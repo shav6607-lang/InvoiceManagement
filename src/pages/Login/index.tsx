@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { setCredentials } from '../../redux/slices/authSlice';
 import { invoiceAPI } from '../../services/api';
+import { keyframes } from '@mui/system';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -94,6 +95,25 @@ const Login: React.FC = () => {
       setLoading(false);
     }
   };
+ const nameAnimation = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.07);
+    filter: blur(1px);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.15);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+`;
 
   return (
     <Box sx={{ width: '100%', maxWidth: 440, px: { xs: 0, sm: 2 } }}>
@@ -101,7 +121,7 @@ const Login: React.FC = () => {
         elevation={0}
         sx={{
           border: '1px solid rgba(255,255,255,0.22)',
-          borderRadius: 4,
+          borderRadius: 2,
           background: 'rgba(255,255,255,0.88)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
@@ -111,7 +131,25 @@ const Login: React.FC = () => {
         }}
       >
         <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                letterSpacing: '0.3px',
+                mb: 0.5,
+              }}
+            >
+              Welcome Back
+            </Typography>
 
+            <Typography
+              variant="body2"
+              color="text.secondary"
+            >
+              Please enter your credentials to access the system
+            </Typography>
+          </Box>
 
           {error && (
             <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
@@ -133,7 +171,7 @@ const Login: React.FC = () => {
                   error={!!errors.username}
                   helperText={errors.username?.message}
                   autoFocus
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0.3 } }}
                 />
               )}
             />
@@ -150,7 +188,7 @@ const Login: React.FC = () => {
                   margin="normal"
                   error={!!errors.password}
                   helperText={errors.password?.message}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0.3 } }}
                   slotProps={{ input: { endAdornment: (
                     <InputAdornment position="end">
                       <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
@@ -172,7 +210,7 @@ const Login: React.FC = () => {
                 mt: 3,
                 mb: 2,
                 py: 1.5,
-                borderRadius: 2,
+                borderRadius: 0.3,
                 fontWeight: 700,
                 fontSize: '1rem',
                 background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
@@ -187,28 +225,28 @@ const Login: React.FC = () => {
             </Button>
           </form>
 
-          {/* Developer Credit */}
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.78rem', lineHeight: 1.5, letterSpacing: '0.3px' }}
-            >
-              Developed by
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{ fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.5px', lineHeight: 1.5 }}
-            >
-              Sharath{' '}
-              <Box
-                component="span"
-                sx={{ color: '#e53935', fontWeight: 900, fontSize: '0.95rem', letterSpacing: '1px' }}
-              >
-                Vadivelu
-              </Box>
-            </Typography>
-          </Box>
+ {/* Developer Credit */}
+<Box sx={{ mt: 2, textAlign: 'center' }}>
+  <Typography
+    variant="caption"
+    color="text.secondary"
+    sx={{ display: 'block', mb: 0.5 }}
+  >
+    Developed & Maintained By
+  </Typography>
 
+  <Typography
+    variant="body2"
+    sx={{
+      fontWeight: 700,
+     color: '#3949AB',
+      letterSpacing: '0.3px',
+      animation: `${nameAnimation} 1.5s ease-out forwards`,
+    }}
+  >
+    Sharath Vadivelu
+  </Typography>
+</Box>
         </CardContent>
       </Card>
     </Box>
