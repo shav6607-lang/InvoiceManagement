@@ -18,7 +18,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useAppSelector } from '../../redux/hooks';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://localhost:44354';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ;
 
 const MATERIAL_TYPES = [
   { value: 1, label: 'Invoice' },
