@@ -10,8 +10,8 @@ import {
   TextField,
   MenuItem,
   IconButton,
-  
-} from '@mui/material';
+} 
+from '@mui/material';
 import { Add, Search, Edit, Delete, Business } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
@@ -21,6 +21,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { addCompany, updateCompany, deleteCompany, type Company } from '../../redux/slices/companySlice';
 import { v4 as uuidv4 } from 'uuid';
+
+declare module '@mui/material';
+declare module '@mui/icons-material';
+declare module '@mui/x-data-grid';
 
 const companySchema = z.object({
   name: z.string().min(3, 'Company Name is required'),
