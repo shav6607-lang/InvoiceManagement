@@ -23,7 +23,6 @@ import { Add, Delete, ArrowBack } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { addDC, type DCItem } from '../../redux/slices/dcSlice';
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -44,7 +43,25 @@ type Company = {
   AccNo: string;
   Branch: string;
   ISFC: string;
+  HSNCode?: string;
+  DCNum?: string;
 };
+export interface DCItem {
+  id: string;
+  productId: string;
+  productName: string;
+  hsnCode: string;
+  quantity: number;
+  rate: number;
+  unit: string;
+  discountPercentage: number;
+  amount: number;
+  taxableValue: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
+  total: number;
+}
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ;
 
@@ -81,27 +98,31 @@ type FormData = {
   dcNumber: string;
   dcDate: string;
   vehicleNo: string;
-  weightmentNo: string;
 };
 
 const CreateDC: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  //const dispatch = useAppDispatch();
   const { token } = useAppSelector((state) => state.auth);
 
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [companyHsnCode, setCompanyHsnCode] = useState<string>('');
   const [materials, setMaterials] = useState<any[]>([]);
   const [items, setItems] = useState<DCItem[]>([]);
   const [taxOption, setTaxOption] = useState<'none' | '5' | '18'>('none');
+  const [zeroTaxRate, setZeroTaxRate] = useState<number>(0);
+  const [cgstSgstRate, setCgstSgstRate] = useState<number>(5);
+  const [igstRate, setIgstRate] = useState<number>(18);
   const [apiError, setApiError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { control, handleSubmit, formState: { errors }, setValue } = useForm<FormData>({
     defaultValues: {
-      dcNumber: genDCNo(),
+      //dcNumber: genDCNo(),
+      dcNumber: '',
       dcDate: new Date().toISOString().split('T')[0],
       vehicleNo: '',
-      weightmentNo: '',
     },
   });
 
@@ -112,14 +133,23 @@ const CreateDC: React.FC = () => {
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data?.Data) && data.Data.length > 0) {
-          setSelectedCompany(data.Data[0]);
+          const company = data.Data[0];
+          setSelectedCompany(company);
+          // Store and set DCNum from company
+          if (company.DCNum) {
+            setValue('dcNumber', company.DCNum);
+          }
+          // Store HSNCode from company
+          if (company.HSNCode) {
+            setCompanyHsnCode(company.HSNCode);
+          }
         }
       })
       .catch(() => {
         setSelectedCompany(null);
       });
 
-    fetch(`${API_BASE}/Material/GetList`, { headers })
+    fetch(`${API_BASE}/Material/GetList?companyId=1&materialType=2`, { headers })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data?.Data)) {
@@ -129,18 +159,36 @@ const CreateDC: React.FC = () => {
       .catch(() => {
         setMaterials([]);
       });
-  }, [token]);
+  }, [token, setValue]);
 
-  const recalcItem = useCallback((item: DCItem, tax: 'none' | '5' | '18'): DCItem => {
+  const recalcItem = useCallback((item: DCItem, tax: 'none' | '5' | '18', zeroRate: number, cgstSgstRateVal: number, igstRateVal: number): DCItem => {
     const amount = item.quantity * item.rate;
     const discount = (amount * item.discountPercentage) / 100;
     const taxableValue = amount - discount;
-    const taxRate = tax === 'none' ? 0 : Number(tax);
-    const gstAmount = (taxableValue * taxRate) / 100;
-    const cgst = tax === '5' ? gstAmount / 2 : 0;
-    const sgst = tax === '5' ? gstAmount / 2 : 0;
-    const igst = tax === '18' ? gstAmount : 0;
-    return { ...item, amount, taxableValue, cgst, sgst, igst, total: taxableValue + gstAmount };
+    
+    let taxRate = 0;
+    let cgst = 0;
+    let sgst = 0;
+    let igst = 0;
+    
+    if (tax === 'none') {
+      taxRate = zeroRate;
+      const gstAmount = (taxableValue * taxRate) / 100;
+      cgst = gstAmount / 2;
+      sgst = gstAmount / 2;
+    } else if (tax === '5') {
+      taxRate = cgstSgstRateVal;
+      const gstAmount = (taxableValue * taxRate) / 100;
+      cgst = gstAmount / 2;
+      sgst = gstAmount / 2;
+    } else if (tax === '18') {
+      taxRate = igstRateVal;
+      const gstAmount = (taxableValue * taxRate) / 100;
+      igst = gstAmount;
+    }
+    
+    const totalGst = cgst + sgst + igst;
+    return { ...item, amount, taxableValue, cgst, sgst, igst, total: taxableValue + totalGst };
   }, []);
 
   const updateItem = (id: string, field: string, value: any) => {
@@ -156,20 +204,20 @@ const CreateDC: React.FC = () => {
           updated.rate = mat.RatePerUnit || 0;
         }
       }
-      return recalcItem(updated, taxOption);
+      return recalcItem(updated, taxOption, zeroTaxRate, cgstSgstRate, igstRate);
     }));
   };
 
   useEffect(() => {
-    setItems((prev) => prev.map((item) => recalcItem(item, taxOption)));
-  }, [taxOption, recalcItem]);
+    setItems((prev) => prev.map((item) => recalcItem(item, taxOption, zeroTaxRate, cgstSgstRate, igstRate)));
+  }, [taxOption, zeroTaxRate, cgstSgstRate, igstRate, recalcItem]);
 
   const addItem = () => {
     setItems((prev) => [...prev, {
       id: uuidv4(),
       productId: '',
       productName: '',
-      hsnCode: '',
+      hsnCode: companyHsnCode,
       quantity: 1,
       rate: 0,
       unit: 'MTs',
@@ -195,19 +243,31 @@ const CreateDC: React.FC = () => {
 
   const onSubmit = handleSubmit(async (data) => {
     setApiError(null);
-    // setSaving(true);
+    setSaving(true);
 
-    const taxRate = taxOption === 'none' ? 0 : Number(taxOption);
-    const cgstPer = taxOption === '5' ? 2.5 : 0;
-    const sgstPer = taxOption === '5' ? 2.5 : 0;
-    const igstPer = taxOption === '18' ? 18 : 0;
+    let taxRate = 0;
+    let cgstPer = 0;
+    let sgstPer = 0;
+    let igstPer = 0;
+
+    if (taxOption === 'none') {
+      taxRate = zeroTaxRate;
+      cgstPer = zeroTaxRate / 2;
+      sgstPer = zeroTaxRate / 2;
+    } else if (taxOption === '5') {
+      taxRate = cgstSgstRate;
+      cgstPer = cgstSgstRate / 2;
+      sgstPer = cgstSgstRate / 2;
+    } else if (taxOption === '18') {
+      taxRate = igstRate;
+      igstPer = igstRate;
+    }
 
     const payload = {
       Id: 0,
       DCNumber: data.dcNumber,
       DCDate: data.dcDate,
       VehicleNumber: data.vehicleNo,
-      WeightmentNo: data.weightmentNo,
       CgstPer: cgstPer,
       SgstPer: sgstPer,
       IgstPer: igstPer,
@@ -255,39 +315,6 @@ const CreateDC: React.FC = () => {
         const message = responseData?.Message || responseData?.message || text || 'Failed to submit delivery challan.';
         throw new Error(message);
       }
-      dispatch(addDC({
-        id: uuidv4(),
-        dcNumber: data.dcNumber,
-        dcDate: data.dcDate,
-        consigneeName: '',
-        consigneeAddress: '',
-        consigneeGstin: '',
-        consigneePhone: '',
-        consigneeState: '',
-        consigneeStateCode: '',
-        sameAsBuyer: false,
-        buyerName: '',
-        buyerAddress: '',
-        buyerGstin: '',
-        buyerPhone: '',
-        buyerState: '',
-        buyerStateCode: '',
-        dispatchedThrough: '',
-        destination: '',
-        vehicleNumber: data.vehicleNo,
-        lrRrNumber: '',
-        weightmentNumber: data.weightmentNo,
-        cgstPer,
-        sgstPer,
-        igstPer,
-        taxPer: taxRate,
-        items,
-        subTotal,
-        totalCgst,
-        totalSgst,
-        totalIgst,
-        grandTotal,
-      }));
       setSaveSuccess(true);
       setTimeout(() => navigate('/dc'), 1200);
     } catch (error: any) {
@@ -306,9 +333,6 @@ const CreateDC: React.FC = () => {
           </IconButton>
           <Typography sx={{ fontSize: '1.25rem', fontWeight: 700 }}>Create Delivery Challan</Typography>
         </Box>
-        <Button variant="contained" onClick={onSubmit} disabled={items.length === 0} sx={{ bgcolor: '#2563eb', '&:hover': { bgcolor: '#1e40af' } }}>
-          Submit
-        </Button>
       </Box>
 
       {apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
@@ -455,7 +479,7 @@ const CreateDC: React.FC = () => {
     sx={{ 
       display: 'grid', 
       gap: 1.25, 
-      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' } 
+      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' } 
     }}
   >
     <Controller 
@@ -468,6 +492,7 @@ const CreateDC: React.FC = () => {
           label="1. DC Number *" 
           fullWidth 
           size="small" 
+          disabled
           error={!!errors.dcNumber} 
           helperText={errors.dcNumber?.message} 
           slotProps={{ htmlInput: { style: { fontSize: '0.825rem', padding: '7.5px 10px' } }, inputLabel: { style: { fontSize: '0.825rem' } } }}
@@ -500,20 +525,6 @@ const CreateDC: React.FC = () => {
         <TextField 
           {...field} 
           label="3. Vehicle Number" 
-          fullWidth 
-          size="small" 
-          slotProps={{ htmlInput: { style: { fontSize: '0.825rem', padding: '7.5px 10px' } }, inputLabel: { style: { fontSize: '0.825rem' } } }}
-        />
-      )} 
-    />
-    
-    <Controller 
-      name="weightmentNo" 
-      control={control} 
-      render={({ field }) => (
-        <TextField 
-          {...field} 
-          label="4. Weightment Number" 
           fullWidth 
           size="small" 
           slotProps={{ htmlInput: { style: { fontSize: '0.825rem', padding: '7.5px 10px' } }, inputLabel: { style: { fontSize: '0.825rem' } } }}
@@ -699,65 +710,83 @@ const CreateDC: React.FC = () => {
                Tax Structure Setup
              </Typography>
              <RadioGroup 
-               row 
                value={taxOption} 
                onChange={(e) => setTaxOption(e.target.value as 'none' | '5' | '18')}
-               sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}
+               sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}
              >
-               {/* 1. Zero Tax */}
+               {/* 1. Zero Tax with Editable Field */}
                <FormControlLabel
                  value="none"
                  control={<Radio size="small" sx={{ p: 0.5 }} />}
                  label={
-                   <Chip 
-                     label="Zero Tax (0%)" 
-                     size="small" 
-                     variant={taxOption === 'none' ? 'filled' : 'outlined'} 
-                     sx={{ fontSize: '0.7rem', height: 22, fontWeight: 600, color: taxOption === 'none' ? 'white' : '#64748b', bgcolor: taxOption === 'none' ? '#64748b' : 'transparent', borderColor: '#64748b' }} 
-                   />
+                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                     <Chip 
+                       label="Zero Tax" 
+                       size="small" 
+                       variant={taxOption === 'none' ? 'filled' : 'outlined'} 
+                       sx={{ fontSize: '0.7rem', height: 22, fontWeight: 600, color: taxOption === 'none' ? 'white' : '#64748b', bgcolor: taxOption === 'none' ? '#64748b' : 'transparent', borderColor: '#64748b' }} 
+                     />
+                     <TextField
+                       type="number"
+                       size="small"
+                       value={zeroTaxRate}
+                       onChange={(e) => setZeroTaxRate(parseFloat(e.target.value) || 0)}
+                       slotProps={{ htmlInput: { step: 0.01, min: 0, max: 100, style: { textAlign: 'right', fontSize: '0.75rem', padding: '4px 8px' } } }}
+                       sx={{ width: 70 }}
+                     />
+                     <Typography sx={{ fontSize: '0.7rem', color: '#64748b' }}>%</Typography>
+                   </Box>
                  }
                  sx={{ m: 0 }}
                />
      
-               {/* 2. CGST + SGST (Editable view) */}
+               {/* 2. CGST + SGST with Editable Field */}
                <FormControlLabel
                  value="5"
                  control={<Radio size="small" sx={{ p: 0.5 }} />}
                  label={
-                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                      <Chip 
                        label="CGST + SGST" 
                        size="small" 
                        variant={taxOption === '5' ? 'filled' : 'outlined'} 
                        sx={{ fontSize: '0.7rem', height: 22, fontWeight: 700, color: taxOption === '5' ? 'white' : '#2563eb', bgcolor: taxOption === '5' ? '#2563eb' : 'transparent', borderColor: '#2563eb' }} 
                      />
-                     {taxOption === '5' && (
-                       <Typography sx={{ fontSize: '0.7rem', color: '#64748b', fontStyle: 'italic' }}>
-                         (Split enabled: 2.5% CGST / 2.5% SGST auto calculation active)
-                       </Typography>
-                     )}
+                     <TextField
+                       type="number"
+                       size="small"
+                       value={cgstSgstRate}
+                       onChange={(e) => setCgstSgstRate(parseFloat(e.target.value) || 0)}
+                       slotProps={{ htmlInput: { step: 0.01, min: 0, max: 100, style: { textAlign: 'right', fontSize: '0.75rem', padding: '4px 8px' } } }}
+                       sx={{ width: 70 }}
+                     />
+                     <Typography sx={{ fontSize: '0.7rem', color: '#64748b' }}>%</Typography>
                    </Box>
                  }
                  sx={{ m: 0 }}
                />
      
-               {/* 3. IGST (Editable view) */}
+               {/* 3. IGST with Editable Field */}
                <FormControlLabel
                  value="18"
                  control={<Radio size="small" sx={{ p: 0.5 }} />}
                  label={
-                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                      <Chip 
-                       label="IGST @ 18%" 
+                       label="IGST" 
                        size="small" 
                        variant={taxOption === '18' ? 'filled' : 'outlined'} 
                        sx={{ fontSize: '0.7rem', height: 22, fontWeight: 700, color: taxOption === '18' ? 'white' : '#0891b2', bgcolor: taxOption === '18' ? '#0891b2' : 'transparent', borderColor: '#0891b2' }} 
                      />
-                     {taxOption === '18' && (
-                       <Typography sx={{ fontSize: '0.7rem', color: '#64748b', fontStyle: 'italic' }}>
-                         (Unified track: 18% Interstate allocation active)
-                       </Typography>
-                     )}
+                     <TextField
+                       type="number"
+                       size="small"
+                       value={igstRate}
+                       onChange={(e) => setIgstRate(parseFloat(e.target.value) || 0)}
+                       slotProps={{ htmlInput: { step: 0.01, min: 0, max: 100, style: { textAlign: 'right', fontSize: '0.75rem', padding: '4px 8px' } } }}
+                       sx={{ width: 70 }}
+                     />
+                     <Typography sx={{ fontSize: '0.7rem', color: '#64748b' }}>%</Typography>
                    </Box>
                  }
                  sx={{ m: 0 }}
@@ -782,14 +811,27 @@ const CreateDC: React.FC = () => {
                  <Typography sx={{ fontSize: '0.775rem', fontWeight: 700, color: '#0f172a' }}>₹{subTotal.toFixed(2)}</Typography>
                </Box>
                
-               {taxOption === '5' && (
+               {taxOption === 'none' && (
                  <>
                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                     <Typography sx={{ fontSize: '0.775rem', color: '#64748b' }}>CGST @ 2.5%</Typography>
+                     <Typography sx={{ fontSize: '0.775rem', color: '#64748b' }}>CGST @ {(zeroTaxRate / 2).toFixed(2)}%</Typography>
                      <Typography sx={{ fontSize: '0.775rem', fontWeight: 500, color: '#0f172a' }}>₹{totalCgst.toFixed(2)}</Typography>
                    </Box>
                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                     <Typography sx={{ fontSize: '0.775rem', color: '#64748b' }}>SGST @ 2.5%</Typography>
+                     <Typography sx={{ fontSize: '0.775rem', color: '#64748b' }}>SGST @ {(zeroTaxRate / 2).toFixed(2)}%</Typography>
+                     <Typography sx={{ fontSize: '0.775rem', fontWeight: 500, color: '#0f172a' }}>₹{totalSgst.toFixed(2)}</Typography>
+                   </Box>
+                 </>
+               )}
+               
+               {taxOption === '5' && (
+                 <>
+                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                     <Typography sx={{ fontSize: '0.775rem', color: '#64748b' }}>CGST @ {(cgstSgstRate / 2).toFixed(2)}%</Typography>
+                     <Typography sx={{ fontSize: '0.775rem', fontWeight: 500, color: '#0f172a' }}>₹{totalCgst.toFixed(2)}</Typography>
+                   </Box>
+                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                     <Typography sx={{ fontSize: '0.775rem', color: '#64748b' }}>SGST @ {(cgstSgstRate / 2).toFixed(2)}%</Typography>
                      <Typography sx={{ fontSize: '0.775rem', fontWeight: 500, color: '#0f172a' }}>₹{totalSgst.toFixed(2)}</Typography>
                    </Box>
                  </>
@@ -797,7 +839,7 @@ const CreateDC: React.FC = () => {
                
                {taxOption === '18' && (
                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                   <Typography sx={{ fontSize: '0.775rem', color: '#64748b' }}>IGST @ 18%</Typography>
+                   <Typography sx={{ fontSize: '0.775rem', color: '#64748b' }}>IGST @ {igstRate.toFixed(2)}%</Typography>
                    <Typography sx={{ fontSize: '0.775rem', fontWeight: 500, color: '#0f172a' }}>₹{totalIgst.toFixed(2)}</Typography>
                  </Box>
                )}
@@ -826,7 +868,24 @@ const CreateDC: React.FC = () => {
        )}
      </Paper>
 
-      {/* Preview removed: direct submit now posts to /api/DC/AddDC */}
+      {/* Submit Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+        <Button 
+          variant="outlined" 
+          onClick={() => navigate('/dc')}
+          sx={{ borderColor: '#cbd5e1', color: '#475569', '&:hover': { bgcolor: '#f1f5f9' } }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          variant="contained" 
+          onClick={onSubmit} 
+          disabled={items.length === 0} 
+          sx={{ bgcolor: '#2563eb', '&:hover': { bgcolor: '#1e40af' }, px: 3 }}
+        >
+          Submit
+        </Button>
+      </Box>
     </Box>
   );
 };

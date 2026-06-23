@@ -73,6 +73,80 @@ export const invoiceAPI = {
       throw error;
     }
   },
+
+  getCompanies: async () => {
+    try {
+      console.log('🏢 Fetching companies...');
+      const response = await axiosInstance.get('/Material/GetCompanies');
+      console.log('✅ Successfully fetched companies');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching companies:', error);
+      throw error;
+    }
+  },
+
+  getMaterials: async () => {
+    try {
+      console.log('📦 Fetching materials...');
+      const response = await axiosInstance.get('/Material/GetList');
+      console.log('✅ Successfully fetched materials');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching materials:', error);
+      throw error;
+    }
+  },
+
+  addInvoice: async (payload: any) => {
+    try {
+      console.log('💾 Submitting invoice...');
+      const response = await axiosInstance.post('/Invoice/AddInvoice', payload);
+      console.log('✅ Invoice submitted successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error submitting invoice:', error);
+      throw error;
+    }
+  },
+};
+
+export const DCAPI = {
+  GetDCList: async () => {
+    try {
+      console.log('🌐 Making API call to /DC/GetDCList');
+      const response = await axiosInstance.get('/DC/GetDCList');
+      console.log('✅ Successfully fetched DC list');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching DC list:', error);
+      throw error;
+    }
+  },
+
+  AddDC: async (payload: any) => {
+    try {
+      console.log('💾 Submitting DC...');
+      const response = await axiosInstance.post('/DC/AddDC', payload);
+      console.log('✅ DC submitted successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error submitting DC:', error);
+      throw error;
+    }
+  },
+
+  DeleteDC: async (id: number) => {
+    try {
+      console.log('🗑️ Deleting DC with ID:', id);
+      const response = await axiosInstance.delete(`/DC/DeleteDC/${id}`);
+      console.log('✅ DC deleted successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error deleting DC:', error);
+      throw error;
+    }
+  },
 };
 
 export default axiosInstance;

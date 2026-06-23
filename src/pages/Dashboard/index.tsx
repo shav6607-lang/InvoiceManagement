@@ -57,7 +57,7 @@ const Dashboard: React.FC = () => {
         <div className="dash-count-card dash-green">
           <div className="dash-count-body">
             <span className="dash-count-label">Total DC</span>
-            <span className="dash-count-value">{dcs.length}</span>
+            <span className="dash-count-value">{0}</span>
             <span className="dash-count-sub">Delivery challans issued</span>
           </div>
           <div className="dash-count-icon">

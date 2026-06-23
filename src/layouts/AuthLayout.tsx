@@ -20,7 +20,7 @@ export const AuthLayout: React.FC = () => {
 
         {/* Left — branding */}
         <div className="auth-brand-content">
-          <h1 className="auth-brand-title">Sri Madeshwara Crusher</h1>
+          <h1 className="auth-brand-title">Sri Madeshwara Stone Crusher</h1>
           <h2 className="auth-brand-subtitle">Invoice Management</h2>
           <p className="auth-brand-tagline">
             Streamline your invoices with precision &amp; grace

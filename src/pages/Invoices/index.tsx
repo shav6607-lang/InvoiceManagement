@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 
 import {
-  Add, Visibility, Print,
+  Add,Search, Visibility, Print,
   KeyboardArrowDown, KeyboardArrowUp, FileDownload,
   Clear, Receipt
 } from '@mui/icons-material';
@@ -29,12 +29,12 @@ interface RowProps {
 const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
   const [open, setOpen] = useState(false);
 
-  const buyerName = row.buyerName || (row.sameAsConsignee ? row.consigneeName : '') || '—';
-  const buyerAddress = row.buyerAddress || (row.sameAsConsignee ? row.consigneeAddress : '') || '—';
-  const buyerPhone = row.buyerPhone || (row.sameAsConsignee ? row.consigneePhone : '') || '—';
-  const buyerGstin = row.buyerGstin || (row.sameAsConsignee ? row.consigneeGstin : '') || '—';
-  const buyerState = row.buyerState || (row.sameAsConsignee ? row.consigneeState : '') || '—';
-  const buyerStateCode = row.buyerStateCode || (row.sameAsConsignee ? row.consigneeStateCode : '') || '—';
+  const buyerName = row.buyerName || '—';
+  const buyerAddress = row.buyerAddress  || '—';
+  const buyerPhone = row.buyerPhone  || '—';
+  const buyerGstin = row.buyerGstin || '—';
+  const buyerState = row.buyerState || '—';
+  const buyerStateCode = row.buyerStateCode || '—';
 
   return (
     <>
@@ -86,7 +86,6 @@ const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.dispatchedThrough || '—'}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.destination || '—'}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{row.vehicleNumber || '—'}</TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.weightmentNo || '—'}</TableCell>
 
         {/* Tax Rates */}
         <TableCell align="right">{row.cgstPer ? `${row.cgstPer}%` : '0%'}</TableCell>
@@ -121,27 +120,33 @@ const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
                     <TableCell align="right" sx={{ fontWeight: 600 }}>Rate (₹)</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Unit</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600 }}>Discount %</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>Taxable Value (₹)</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>Total (₹)</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>Amount (₹)</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>Discount Amount (₹)</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>Final Amount (₹)</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {row.items && row.items.map((item, idx) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>{idx + 1}</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>{item.productName}</TableCell>
-                      <TableCell>{item.hsnCode}</TableCell>
-                      <TableCell align="right">{item.quantity}</TableCell>
-                      <TableCell align="right">₹{item.rate.toFixed(2)}</TableCell>
-                      <TableCell>{item.unit}</TableCell>
-                      <TableCell align="right">{item.discountPercentage}%</TableCell>
-                      <TableCell align="right">₹{item.taxableValue.toFixed(2)}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>₹{item.total.toFixed(2)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {row.items && row.items.map((item, idx) => {
+                    const discountAmount = (item.amount * item.discountPercentage) / 100;
+                    const finalAmount = item.amount - discountAmount;
+                    return (
+                      <TableRow key={item.id} hover>
+                        <TableCell>{idx + 1}</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>{item.productName}</TableCell>
+                        <TableCell>{item.hsnCode}</TableCell>
+                        <TableCell align="right">{item.quantity}</TableCell>
+                        <TableCell align="right">₹{item.rate.toFixed(2)}</TableCell>
+                        <TableCell>{item.unit}</TableCell>
+                        <TableCell align="right">{item.discountPercentage}%</TableCell>
+                        <TableCell align="right">₹{item.amount.toFixed(2)}</TableCell>
+                        <TableCell align="right">₹{discountAmount.toFixed(2)}</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>₹{finalAmount.toFixed(2)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                   {(!row.items || row.items.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={9} align="center">No items found inside this invoice.</TableCell>
+                      <TableCell colSpan={10} align="center">No items found inside this invoice.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -275,14 +280,14 @@ const Invoices: React.FC = () => {
             <Typography variant="h4" sx={{ fontWeight: 800 }} color="#111827">Invoices</Typography>
             {!error && invoices.length > 0 && (
               <Chip 
-                label="📡 API Data" 
+                label="📡" 
                 size="small" 
                 sx={{ bgcolor: '#d1fae5', color: '#047857', fontWeight: 600 }}
               />
             )}
             {error && invoices.length > 0 && (
               <Chip 
-                label="📋 Mock Data" 
+                label="📋" 
                 size="small" 
                 sx={{ bgcolor: '#fef3c7', color: '#d97706', fontWeight: 600 }}
               />
@@ -366,8 +371,30 @@ const Invoices: React.FC = () => {
 
   {/* Buttons */}
   <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
-    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-      ...
+    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-start' }}>
+      <Tooltip title="Search">
+                      <IconButton
+                        color="primary"
+                        onClick={handleSearch}
+                        sx={{
+                          border: '1px solid',
+                          borderColor: 'primary.main'
+                        }}
+                      > 
+                      <Search />
+                      </IconButton>
+        </Tooltip>
+        {/* <Tooltip title="Download Excel">
+                        <IconButton
+                          color="success"
+                          sx={{
+                            border: '1px solid',
+                            borderColor: 'success.main'
+                          }}
+                        >
+                          <FileDownload />
+                        </IconButton>
+                      </Tooltip> */}
     </Box>
   </Box>
 </Box>
@@ -425,11 +452,10 @@ const Invoices: React.FC = () => {
                 <th style={{ padding: '12px 16px', textAlign: 'left' }}>DispatchThrough</th>
                 <th style={{ padding: '12px 16px', textAlign: 'left' }}>Destination</th>
                 <th style={{ padding: '12px 16px', textAlign: 'left' }}>VehicleNo</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>WeightmentNo</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>CGSTPer</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>SGSTPer</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>IGSTPer</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>TaxPer</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>CGST</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>SGST</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>IGST</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Tax</th>
                 <th style={{ padding: '12px 16px', textAlign: 'right' }}>TotalAmount</th>
                 <th style={{ padding: '12px 16px', textAlign: 'right' }}>BillAmount</th>
               </TableRow>
@@ -458,7 +484,7 @@ const Invoices: React.FC = () => {
                 ))}
               {filteredInvoices.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={20} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={18} align="center" sx={{ py: 8 }}>
                     <Receipt sx={{ fontSize: 48, color: '#94a3b8', mb: 1 }} />
                     <Typography color="text.secondary">No invoices found matching criteria.</Typography>
                   </TableCell>
@@ -594,10 +620,9 @@ const Invoices: React.FC = () => {
                   </tr>
                   <tr>
                     <td style={{ border: '1px solid black', padding: '4px' }}>
-                      <div style={{ fontSize: '9px', color: '#666' }}>Vehicle Number / Weightment No.</div>
+                      <div style={{ fontSize: '9px', color: '#666' }}>Vehicle Number</div>
                       <div style={{ fontWeight: 700 }}>
                         {viewInvoice.vehicleNumber || '—'}
-                        {viewInvoice.weightmentNo ? ` / ${viewInvoice.weightmentNo}` : ''}
                       </div>
                     </td>
                     <td style={{ border: '1px solid black', padding: '4px' }}>
@@ -619,24 +644,30 @@ const Invoices: React.FC = () => {
                     <th style={{ border: '1px solid black', padding: '4px', width: '70px', textAlign: 'right' }}>Rate (₹)</th>
                     <th style={{ border: '1px solid black', padding: '4px', width: '40px' }}>Per</th>
                     <th style={{ border: '1px solid black', padding: '4px', width: '45px', textAlign: 'right' }}>Disc %</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Taxable Amt (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '90px', textAlign: 'right' }}>Total (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Amount (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Disc Amt (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '90px', textAlign: 'right' }}>Final Amt (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {viewInvoice.items && viewInvoice.items.map((it, idx) => (
-                    <tr key={it.id}>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{idx + 1}</td>
-                      <td style={{ border: '1px solid black', padding: '4px' }}><strong>{it.productName}</strong></td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.hsnCode}</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.quantity.toFixed(3)}</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.rate.toFixed(2)}</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.unit}</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.discountPercentage}%</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.taxableValue.toFixed(2)}</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}><strong>{it.total.toFixed(2)}</strong></td>
-                    </tr>
-                  ))}
+                  {viewInvoice.items && viewInvoice.items.map((it, idx) => {
+                    const discountAmount = (it.amount * it.discountPercentage) / 100;
+                    const finalAmount = it.amount - discountAmount;
+                    return (
+                      <tr key={it.id}>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{idx + 1}</td>
+                        <td style={{ border: '1px solid black', padding: '4px' }}><strong>{it.productName}</strong></td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.hsnCode}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.quantity.toFixed(3)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.rate.toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.unit}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.discountPercentage}%</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.amount.toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{discountAmount.toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}><strong>{finalAmount.toFixed(2)}</strong></td>
+                      </tr>
+                    );
+                  })}
                   <tr style={{ fontWeight: 700 }}>
                     <td colSpan={3} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Total</td>
                     <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
@@ -644,7 +675,7 @@ const Invoices: React.FC = () => {
                     </td>
                     <td colSpan={3} style={{ border: '1px solid black' }}></td>
                     <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{viewInvoice.subTotal?.toFixed(2)}</td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>₹{viewInvoice.grandTotal?.toFixed(2)}</td>
+                    <td colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>₹{viewInvoice.grandTotal?.toFixed(2)}</td>
                   </tr>
                 </tbody>
               </table>

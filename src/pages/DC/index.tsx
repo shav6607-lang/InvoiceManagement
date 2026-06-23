@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Box, Typography, Button, Card, 
+  Box, Typography, Button, Card,
   IconButton, Chip, TextField, Dialog, DialogTitle,
   DialogContent, DialogActions, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow,
-  Collapse, TablePagination, Tooltip,
+  Collapse, Grid, TablePagination, Tooltip,
   CircularProgress
 } from '@mui/material';
 import {
@@ -14,33 +14,42 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { deleteInvoice, fetchInvoices, type Invoice } from '../../redux/slices/invoiceSlice';
-import { format } from 'date-fns';
+import { deleteDC, fetchDCs, type DC } from '../../redux/slices/dcSlice';
 import { useReactToPrint } from 'react-to-print';
+
+// Type definition for DC Line Items
+interface DCItem {
+  productId: string;
+  productName: string;
+  hsnCode: string;
+  Qty: number;
+  RatePerUnit: number;
+  Unit: string;
+  Disc: number;
+  TaxableAmount: number;
+  Total: number;
+}
 
 // ─── Collapsible Row Sub-Component ──────────────────────────────────────────
 interface RowProps {
-  row: Invoice;
-  onView: (row: Invoice) => void;
-  onDownload: (row: Invoice) => void;
+  row: DC;
+  onView: (row: DC) => void;
+  onDownload: (row: DC) => void;
 }
 
 const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
   const [open, setOpen] = useState(false);
-
-  const buyerName = row.buyerName || (row.sameAsConsignee ? row.consigneeName : '') || '—';
-  const buyerAddress = row.buyerAddress || (row.sameAsConsignee ? row.consigneeAddress : '') || '—';
-  const buyerPhone = row.buyerPhone || (row.sameAsConsignee ? row.consigneePhone : '') || '—';
-  const buyerGstin = row.buyerGstin || (row.sameAsConsignee ? row.consigneeGstin : '') || '—';
-  const buyerState = row.buyerState || (row.sameAsConsignee ? row.consigneeState : '') || '—';
-  const buyerStateCode = row.buyerStateCode || (row.sameAsConsignee ? row.consigneeStateCode : '') || '—';
+  
+  console.log('🎨 [Row] Rendering row:', row);
+  console.log('🎨 [Row] Row DCNo:', row?.DCNo);
+  console.log('🎨 [Row] Row VehicleNo:', row?.VehicleNo);
 
   return (
     <>
       <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
         {/* Actions Cell: View, Download, Expand */}
         <TableCell align="center" sx={{ whiteSpace: 'nowrap', py: 1 }}>
-          <Tooltip title="View Invoice">
+          <Tooltip title="View DC">
             <IconButton size="small" color="primary" onClick={() => onView(row)}>
               <Visibility fontSize="small" />
             </IconButton>
@@ -57,57 +66,38 @@ const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
           </Tooltip>
         </TableCell>
 
-        {/* Core Invoice Details */}
+        {/* Core DC Details */}
         <TableCell sx={{ fontWeight: 600, color: 'primary.main', whiteSpace: 'nowrap' }}>
-          {row.invoiceNumber}
+          {row.DCNo}
         </TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          {row.invoiceDate ? format(new Date(row.invoiceDate), 'dd MMM yyyy') : '—'}
+          {row.DCDate || '—'}
         </TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 500 }}>
-          {buyerName}
+        <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>
+          {row.VehicleNo || '—'}
         </TableCell>
-        <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {buyerAddress}
-        </TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{buyerPhone}</TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{buyerGstin}</TableCell>
-        <TableCell align="center">
-          <Chip
-            label={row.urn ? 'YES' : 'NO'}
-            size="small"
-            color={row.urn ? 'success' : 'default'}
-            sx={{ fontWeight: 600, fontSize: '0.75rem' }}
-          />
-        </TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{buyerState}</TableCell>
-        <TableCell align="center">{buyerStateCode}</TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.dispatchedThrough || '—'}</TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.destination || '—'}</TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{row.vehicleNumber || '—'}</TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.weightmentNo || '—'}</TableCell>
 
         {/* Tax Rates */}
-        <TableCell align="right">{row.cgstPer ? `${row.cgstPer}%` : '0%'}</TableCell>
-        <TableCell align="right">{row.sgstPer ? `${row.sgstPer}%` : '0%'}</TableCell>
-        <TableCell align="right">{row.igstPer ? `${row.igstPer}%` : '0%'}</TableCell>
-        <TableCell align="right">{row.taxPer ? `${row.taxPer}%` : '0%'}</TableCell>
+        <TableCell align="right" sx={{ fontWeight: 600 }}>{(row.CGST || 0)}%</TableCell>
+        <TableCell align="right" sx={{ fontWeight: 500 }}>{(row.SGST || 0)}%</TableCell>
+        <TableCell align="right" sx={{ fontWeight: 500 }}>{(row.IGST || 0)}%</TableCell>
+        <TableCell align="right" sx={{ fontWeight: 500 }}>{((row.CGST || 0) + (row.SGST || 0) + (row.IGST || 0))}%</TableCell>
 
-        {/* Total & Bill Amount */}
-        <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontWeight: 500 }}>
-          ₹{row.subTotal ? row.subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
+        {/* Total Amount */}
+        <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontWeight: 700, color: 'success.main' }}>
+          ₹{(Number(row.TaxAmount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </TableCell>
         <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontWeight: 700, color: 'success.main' }}>
-          ₹{row.grandTotal ? row.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
+          ₹{(Number(row.TotalAmount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </TableCell>
       </TableRow>
 
       {/* Expanded Line Items Detail Panel */}
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={20}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={15}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 2, p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-              <Typography variant="subtitle2" color="primary" gutterBottom sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Receipt fontSize="small" /> Description of Goods
               </Typography>
               <Table size="small">
@@ -120,27 +110,34 @@ const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
                     <TableCell align="right" sx={{ fontWeight: 600 }}>Rate (₹)</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Unit</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600 }}>Discount %</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>Taxable Value (₹)</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>Total (₹)</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>Amount (₹)</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>Discount Amount (₹)</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>Final Amount (₹)</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {row.items && row.items.map((item, idx) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>{idx + 1}</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>{item.productName}</TableCell>
-                      <TableCell>{item.hsnCode}</TableCell>
-                      <TableCell align="right">{item.quantity}</TableCell>
-                      <TableCell align="right">₹{item.rate.toFixed(2)}</TableCell>
-                      <TableCell>{item.unit}</TableCell>
-                      <TableCell align="right">{item.discountPercentage}%</TableCell>
-                      <TableCell align="right">₹{item.taxableValue.toFixed(2)}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>₹{item.total.toFixed(2)}</TableCell>
-                    </TableRow>
-                  ))}
-                  {(!row.items || row.items.length === 0) && (
+                  {row.JsonDCDetails && row.JsonDCDetails.map((item: DCItem, idx: number) => {
+                    const amount = (Number(item.Qty) || 0) * (Number(item.RatePerUnit) || 0);
+                    const discountAmount = (amount * (Number(item.Disc) || 0)) / 100;
+                    const finalAmount = amount - discountAmount;
+                    return (
+                      <TableRow key={item.productId} hover>
+                        <TableCell>{idx + 1}</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>{item.productName}</TableCell>
+                        <TableCell>{item.hsnCode}</TableCell>
+                        <TableCell align="right">{item.Qty}</TableCell>
+                        <TableCell align="right">₹{(Number(item.RatePerUnit) || 0).toFixed(2)}</TableCell>
+                        <TableCell>{item.Unit}</TableCell>
+                        <TableCell align="right">{item.Disc}%</TableCell>
+                        <TableCell align="right">₹{amount.toFixed(2)}</TableCell>
+                        <TableCell align="right">₹{discountAmount.toFixed(2)}</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>₹{finalAmount.toFixed(2)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {(!row.JsonDCDetails || row.JsonDCDetails.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={9} align="center">No items found inside this invoice.</TableCell>
+                      <TableCell colSpan={9} align="center">No items found in this DC.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -153,11 +150,11 @@ const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
   );
 };
 
-// ─── Main Invoices Component ────────────────────────────────────────────────
-const Invoices: React.FC = () => {
+// ─── Main DC Component ────────────────────────────────────────────────
+const DCList: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { invoices, loading, error } = useAppSelector((state) => state.invoices);
+  const { data: dcs = [], loading = false, error = null } = useAppSelector((state) => state.dcs || { data: [], loading: false, error: null });
 
   // States
   const [searchQuery, setSearchQuery] = useState('');
@@ -169,10 +166,15 @@ const Invoices: React.FC = () => {
   const [filterFromDate, setFilterFromDate] = useState('');
   const [filterToDate, setFilterToDate] = useState('');
 
-  // Fetch invoices on component mount
+  // Fetch DCs on component mount
   useEffect(() => {
-    console.log('📋 Invoices component mounted, fetching data...');
-    dispatch(fetchInvoices());
+    console.log('📋 DC List component mounted, fetching data...');
+    console.log('🔍 Current Redux state:', { dcs, loading, error });
+    dispatch(fetchDCs()).then(() => {
+      console.log('✅ fetchDCs action completed');
+    }).catch((err) => {
+      console.error('❌ fetchDCs action failed:', err);
+    });
   }, [dispatch]);
 
   React.useEffect(() => {
@@ -200,8 +202,8 @@ const Invoices: React.FC = () => {
     setFilterToDate(toVal);
   }, []);
 
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [viewDC, setViewDC] = useState<DC | null>(null);
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -221,34 +223,61 @@ const Invoices: React.FC = () => {
 
 
 
-  const filteredInvoices = invoices.filter((inv) => {
-    const buyer = (inv.buyerName || (inv.sameAsConsignee ? inv.consigneeName : '') || '').toLowerCase();
+  const filteredDCs = dcs.filter((dc) => {
     const searchLower = filterSearch.toLowerCase();
 
     if (filterSearch) {
-      const matchNumber = inv.invoiceNumber.toLowerCase().includes(searchLower);
-      const matchBuyer = buyer.includes(searchLower);
-      const matchVehicle = (inv.vehicleNumber || '').toLowerCase().includes(searchLower);
-      const matchWeightment = (inv.weightmentNo || '').toLowerCase().includes(searchLower);
-      if (!matchNumber && !matchBuyer && !matchVehicle && !matchWeightment) {
+      const matchDCNo = dc.DCNo.toLowerCase().includes(searchLower);
+      const matchVehicle = (dc.VehicleNo || '').toLowerCase().includes(searchLower);
+      if (!matchDCNo && !matchVehicle) {
         return false;
       }
     }
 
-    if (inv.invoiceDate) {
-      if (filterFromDate && inv.invoiceDate < filterFromDate) {
+    // Convert DD/MM/YYYY to YYYY-MM-DD for proper comparison
+    if (dc.DCDate) {
+      const dcDateParts = dc.DCDate.split('/');
+      let normalizedDCDate = dc.DCDate;
+      
+      // If date is in DD/MM/YYYY format, convert to YYYY-MM-DD
+      if (dcDateParts.length === 3 && dcDateParts[0].length === 2) {
+        const [day, month, year] = dcDateParts;
+        normalizedDCDate = `${year}-${month}-${day}`;
+      }
+      
+      if (filterFromDate && normalizedDCDate < filterFromDate) {
         return false;
       }
-      if (filterToDate && inv.invoiceDate > filterToDate) {
+      if (filterToDate && normalizedDCDate > filterToDate) {
         return false;
       }
     }
     return true;
   });
 
+  console.log('📊 Redux dcs state:', dcs);
+  console.log('📊 Redux loading state:', loading);
+  console.log('📊 Redux error state:', error);
+  
+  // Debug filtering
+  console.log('🔍 [Filter] Input dcs.length:', dcs.length);
+  dcs.forEach((dc, idx) => {
+    const dcDateParts = dc.DCDate.split('/');
+    let normalizedDCDate = dc.DCDate;
+    if (dcDateParts.length === 3 && dcDateParts[0].length === 2) {
+      const [day, month, year] = dcDateParts;
+      normalizedDCDate = `${year}-${month}-${day}`;
+    }
+    console.log(`🔍 [Filter] DC ${idx}: Original="${dc.DCDate}" Normalized="${normalizedDCDate}" FilterFrom="${filterFromDate}" FilterTo="${filterToDate}"`);
+    console.log(`🔍 [Filter] DC ${idx}: Pass date filter? (${normalizedDCDate} >= ${filterFromDate} && ${normalizedDCDate} <= ${filterToDate})`);
+  });
+  
+  console.log('📊 Filtered DCs:', filteredDCs);
+  console.log('📊 Filter params - search:', filterSearch, 'from:', filterFromDate, 'to:', filterToDate);
+
   const handleDelete = () => {
     if (deleteId) {
-      dispatch(deleteInvoice(deleteId));
+      dispatch(deleteDC(deleteId));
       setDeleteId(null);
     }
   };
@@ -262,45 +291,24 @@ const Invoices: React.FC = () => {
     setPage(0);
   };
 
-  
+
 
   // Excel Format CSV Exporter
   const handleExportToCSV = () => {
     const headers = [
-      'Invoice No', 'Invoice Date', 'Buyer Name', 'Address', 'Phone', 'GSTIN', 'URN',
-      'State', 'State Code', 'Dispatch Through', 'Destination', 'Vehicle No', 'Weightment No',
-      'CGST %', 'SGST %', 'IGST %', 'Tax %', 'Total Amount', 'Bill Amount'
+      'DC No', 'DC Date', 'Vehicle No', 'CGST %', 'SGST %', 'IGST %', 'Total Tax %', 'Total Amount'
     ];
 
-    const rows = filteredInvoices.map((inv) => {
-      const buyer = inv.buyerName || (inv.sameAsConsignee ? inv.consigneeName : '');
-      const addr = inv.buyerAddress || (inv.sameAsConsignee ? inv.consigneeAddress : '');
-      const ph = inv.buyerPhone || (inv.sameAsConsignee ? inv.consigneePhone : '');
-      const gst = inv.buyerGstin || (inv.sameAsConsignee ? inv.consigneeGstin : '');
-      const st = inv.buyerState || (inv.sameAsConsignee ? inv.consigneeState : '');
-      const stc = inv.buyerStateCode || (inv.sameAsConsignee ? inv.consigneeStateCode : '');
-      return [
-        inv.invoiceNumber,
-        inv.invoiceDate,
-        buyer,
-        addr,
-        ph,
-        gst,
-        inv.urn ? 'YES' : 'NO',
-        st,
-        stc,
-        inv.dispatchedThrough || '',
-        inv.destination || '',
-        inv.vehicleNumber || '',
-        inv.weightmentNo || '',
-        inv.cgstPer || 0,
-        inv.sgstPer || 0,
-        inv.igstPer || 0,
-        inv.taxPer || 0,
-        inv.subTotal || 0,
-        inv.grandTotal || 0
-      ];
-    });
+    const rows = filteredDCs.map((dc) => [
+      dc.DCNo,
+      dc.DCDate,
+      dc.VehicleNo || '',
+      dc.CGST || 0,
+      dc.SGST || 0,
+      dc.IGST || 0,
+      ((dc.CGST || 0) + (dc.SGST || 0) + (dc.IGST || 0)) || 0,
+      dc.TotalAmount || 0
+    ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF'
       + [headers.join(','), ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\r\n');
@@ -308,7 +316,7 @@ const Invoices: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `invoices_excel_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `DC_export_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -320,17 +328,17 @@ const Invoices: React.FC = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography variant="h4" sx={{ fontWeight: 800 }} color="#111827">Delivery Challans</Typography>
-            {!error && invoices.length > 0 && (
+            <Typography variant="h4" sx={{ fontWeight: 800, color: '#111827' }}>Delivery Challans</Typography>
+            {!error && dcs.length > 0 && (
               <Chip 
-                label="📡 API Data" 
+                label="📡" 
                 size="small" 
                 sx={{ bgcolor: '#d1fae5', color: '#047857', fontWeight: 600 }}
               />
             )}
-            {error && invoices.length > 0 && (
+            {error && dcs.length > 0 && (
               <Chip 
-                label="📋 Mock Data" 
+                label="📋" 
                 size="small" 
                 sx={{ bgcolor: '#fef3c7', color: '#d97706', fontWeight: 600 }}
               />
@@ -365,78 +373,77 @@ const Invoices: React.FC = () => {
           backgroundColor: '#fff'
         }}
       >
-       <Box
-  sx={{
-    display: 'grid',
-    gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' },
-    gap: 2,
-    alignItems: 'center',
-  }}
->
-  {/* DC Number */}
-  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
-    <TextField
-      label="DC Number"
-      placeholder="Search DC Number"
-      fullWidth
-      size="small"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-    />
-  </Box>
+        <Grid container spacing={2} sx={{ alignItems: 'center' }}>
 
-  {/* From Date */}
-  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
-    <TextField
-      label="From Date"
-      type="date"
-      size="small"
-      fullWidth
-      value={fromDate}
-      onChange={(e) => setFromDate(e.target.value)}
-      slotProps={{ inputLabel: { shrink: true } }}
-    />
-  </Box>
+          <Grid item xs={12} md={4}>
+            <TextField
+              label="Search DC"
+              placeholder="Search by DC Number, Vehicle No, or Weightment"
+              fullWidth
+              size="small"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            />
+          </Grid>
 
-  {/* To Date */}
-  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
-    <TextField
-      label="To Date"
-      type="date"
-      size="small"
-      fullWidth
-      value={toDate}
-      onChange={(e) => setToDate(e.target.value)}
-      slotProps={{ inputLabel: { shrink: true } }}
-    />
-  </Box>
+          <Grid item xs={12} sm={6} md={2.5}>
+            <TextField
+              label="From Date"
+              type="date"
+              size="small"
+              fullWidth
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
 
-  {/* Buttons */}
-  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
-    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-      <Tooltip title="Search">
-        <IconButton
-          color="primary"
-          onClick={handleSearch}
-          sx={{ border: '1px solid', borderColor: 'primary.main' }}
-        >
-          <Search />
-        </IconButton>
-      </Tooltip>
+          <Grid item xs={12} sm={6} md={2.5}>
+            <TextField
+              label="To Date"
+              type="date"
+              size="small"
+              fullWidth
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
 
-      <Tooltip title="Download Excel">
-        <IconButton
-          color="success"
-          onClick={handleExportToCSV}
-          sx={{ border: '1px solid', borderColor: 'success.main' }}
-        >
-          <FileDownload />
-        </IconButton>
-      </Tooltip>
-    </Box>
-  </Box>
-</Box>
+          <Grid item xs={12} md={3}>
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+
+              <Tooltip title="Search">
+                <IconButton
+                  color="primary"
+                  onClick={handleSearch}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'primary.main'
+                  }}
+                >
+                  <Search />
+                </IconButton>
+              </Tooltip>
+              {/* <Tooltip title="Download Excel">
+                <IconButton
+                  color="success"
+                  onClick={handleExportToCSV}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'success.main'
+                  }}
+                >
+                  <FileDownload />
+                </IconButton>
+              </Tooltip> */}
+
+            </Box>
+          </Grid>
+        </Grid>
       </Card>
 
       {/* ── Collapsible Grid View Table ── */}
@@ -446,16 +453,16 @@ const Invoices: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
             <Box sx={{ textAlign: 'center' }}>
               <CircularProgress sx={{ mb: 2 }} />
-              <Typography color="text.secondary">Loading invoices...</Typography>
+              <Typography color="text.secondary">Loading DCs...</Typography>
             </Box>
           </Box>
         )}
 
         {/* Error State - Only show if no data */}
-        {error && !loading && invoices.length === 0 && (
+        {error && !loading && dcs.length === 0 && (
           <Box sx={{ p: 3, textAlign: 'center', bgcolor: '#fee2e2', border: '1px solid #fca5a5' }}>
             <Typography color="error" sx={{ fontWeight: 600, mb: 1 }}>
-              Error Loading Invoices
+              Error Loading Delivery Challans
             </Typography>
             <Typography color="error" variant="body2" sx={{ mb: 2 }}>
               {error}
@@ -464,7 +471,7 @@ const Invoices: React.FC = () => {
               variant="contained"
               color="error"
               size="small"
-              onClick={() => dispatch(fetchInvoices())}
+              onClick={() => dispatch(fetchDCs())}
             >
               Retry
             </Button>
@@ -472,52 +479,61 @@ const Invoices: React.FC = () => {
         )}
 
         {/* Data Table - Show if not loading or has data */}
-        {(!loading || invoices.length > 0) && (
+        {(!loading || dcs.length > 0) && (
           <>
         <TableContainer sx={{ maxHeight: 600 }}>
           <Table stickyHeader size="small" aria-label="collapsible table">
             <TableHead>
               <TableRow sx={{ '& th': { bgcolor: '#f8fafc', color: '#475569', fontWeight: 700 } }}>
                 <th style={{ width: '140px', padding: '12px 16px', textAlign: 'center' }}>Actions</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>DC Num</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left' }}>DC No</th>
                 <th style={{ padding: '12px 16px', textAlign: 'left' }}>DC Date</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>VehicleNo</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>WeightmentNo</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>CGSTPer</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>SGSTPer</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>IGSTPer</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>TaxPer</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>TotalAmount</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>BillAmount</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left' }}>Vehicle No</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>CGST</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>SGST</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>IGST</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Tax</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Tax Amount</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Total Amount</th>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredInvoices
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row) => (
-                  <Row
-                    key={row.id}
-                    row={row}
-                    onView={(inv) => setViewInvoice(inv)}
-                    onDownload={(inv) => {
-                      // Download invoice JSON as a file
-                      const blob = new Blob([JSON.stringify(inv, null, 2)], { type: 'application/json' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `invoice_${inv.invoiceNumber || inv.id}.json`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      URL.revokeObjectURL(url);
-                    }}
-                  />
-                ))}
-              {filteredInvoices.length === 0 && (
+              {(() => {
+                const sliceData = filteredDCs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+                console.log('📋 [TableBody] About to render rows');
+                console.log('📋 [TableBody] dcs.length:', dcs.length);
+                console.log('📋 [TableBody] filteredDCs.length:', filteredDCs.length);
+                console.log('📋 [TableBody] sliceData.length:', sliceData.length);
+                console.log('📋 [TableBody] sliceData:', sliceData);
+                console.log('📋 [TableBody] page:', page, 'rowsPerPage:', rowsPerPage);
+                
+                return sliceData.map((row, idx) => {
+                  console.log(`🎨 [Mapping] Row ${idx}:`, row);
+                  return (
+                    <Row
+                      key={row.SlNo || idx}
+                      row={row}
+                      onView={(dc) => setViewDC(dc)}
+                      onDownload={(dc) => {
+                        const blob = new Blob([JSON.stringify(dc, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `DC_${dc.DCNo}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(url);
+                      }}
+                    />
+                  );
+                });
+              })()}
+              {filteredDCs.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={20} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={15} align="center" sx={{ py: 8 }}>
                     <Receipt sx={{ fontSize: 48, color: '#94a3b8', mb: 1 }} />
-                    <Typography color="text.secondary">No invoices found matching criteria.</Typography>
+                    <Typography color="text.secondary">No DCs found matching criteria.</Typography>
                   </TableCell>
                 </TableRow>
               )}
@@ -527,7 +543,7 @@ const Invoices: React.FC = () => {
         <TablePagination
           rowsPerPageOptions={[10, 25, 50]}
           component="div"
-          count={filteredInvoices.length}
+          count={filteredDCs.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
@@ -539,9 +555,9 @@ const Invoices: React.FC = () => {
 
       {/* Delete Dialog */}
       <Dialog open={!!deleteId} onClose={() => setDeleteId(null)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Delete Invoice</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Delete DC</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this invoice? This cannot be undone.</Typography>
+          <Typography>Are you sure you want to delete this Delivery Challan? This cannot be undone.</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteId(null)} sx={{ fontWeight: 600 }}>Cancel</Button>
@@ -550,15 +566,15 @@ const Invoices: React.FC = () => {
       </Dialog>
 
       {/* View / Print Preview Dialog */}
-      <Dialog open={!!viewInvoice} onClose={() => setViewInvoice(null)} maxWidth="md" fullWidth>
+      <Dialog open={!!viewDC} onClose={() => setViewDC(null)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Invoice Preview ({viewInvoice?.invoiceNumber})</span>
-          <IconButton onClick={() => setViewInvoice(null)} size="small">
+          <span>DC Preview ({viewDC?.DCNo})</span>
+          <IconButton onClick={() => setViewDC(null)} size="small">
             <Clear />
           </IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          {viewInvoice && (
+          {viewDC && (
             <Box ref={printDialogRef} sx={{ p: 2, bgcolor: 'white', color: 'black', fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
               {/* Header */}
               <Box sx={{ textAlign: 'center', mb: 1 }}>
@@ -567,40 +583,28 @@ const Invoices: React.FC = () => {
                 <Typography sx={{ fontSize: '11px', color: 'black' }}>GSTIN: 29AAACS2300D1Z4 | State: Karnataka (29)</Typography>
               </Box>
               <hr style={{ border: 'none', borderTop: '2px solid black', margin: '4px 0' }} />
-              <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '13px', mb: 1, color: 'black' }}>TAX INVOICE</Typography>
+              <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '13px', mb: 1, color: 'black' }}>DELIVERY CHALLAN</Typography>
 
               <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', marginBottom: '8px' }}>
                 <tbody>
                   <tr>
                     <td style={{ width: '50%', border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 700 }}>Consignee (Ship To):</div>
-                      <div style={{ fontWeight: 700 }}>{viewInvoice.consigneeName}</div>
-                      <div>{viewInvoice.consigneeAddress}</div>
-                      <div>GSTIN: {viewInvoice.consigneeGstin || '—'}</div>
-                      <div>State: {viewInvoice.consigneeState} | Code: {viewInvoice.consigneeStateCode || '—'}</div>
-                      <div>Phone: {viewInvoice.consigneePhone}</div>
+                      <div style={{ fontWeight: 700 }}>DC Details:</div>
+                      <div>Company ID: {viewDC.CompanyId}</div>
+                      <div style={{ marginTop: '8px' }}>Created By: {viewDC.CreatedBy}</div>
+                      <div>Created On: {viewDC.CreatedOn}</div>
                     </td>
                     <td style={{ width: '50%', border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <tbody>
                           <tr>
                             <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px', width: '50%' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Invoice No.</div>
-                              <div style={{ fontWeight: 700 }}>{viewInvoice.invoiceNumber}</div>
+                              <div style={{ fontSize: '9px', color: '#666' }}>DC No.</div>
+                              <div style={{ fontWeight: 700 }}>{viewDC.DCNo}</div>
                             </td>
                             <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Dated</div>
-                              <div style={{ fontWeight: 700 }}>{viewInvoice.invoiceDate}</div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Delivery Note</div>
-                              <div>{viewInvoice.deliveryNote || '—'}</div>
-                            </td>
-                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Payment Terms</div>
-                              <div>{viewInvoice.paymentTerms || '—'}</div>
+                              <div style={{ fontSize: '9px', color: '#666' }}>DC Date</div>
+                              <div style={{ fontWeight: 700 }}>{viewDC.DCDate}</div>
                             </td>
                           </tr>
                         </tbody>
@@ -608,58 +612,11 @@ const Invoices: React.FC = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td style={{ border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 700 }}>Buyer (Bill To):</div>
-                      {viewInvoice.sameAsConsignee ? (
-                        <div>Same as Consignee</div>
-                      ) : (
-                        <>
-                          <div style={{ fontWeight: 700 }}>{viewInvoice.buyerName}</div>
-                          <div>{viewInvoice.buyerAddress}</div>
-                          <div>GSTIN: {viewInvoice.buyerGstin || '—'}</div>
-                          <div>State: {viewInvoice.buyerState} | Code: {viewInvoice.buyerStateCode || '—'}</div>
-                        </>
-                      )}
-                      {viewInvoice.urn && <div style={{ fontSize: '10px', marginTop: '4px', color: 'blue', fontWeight: 600 }}>URN: REGISTERED</div>}
-                    </td>
-                    <td style={{ border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px', width: '50%' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Buyer Order No.</div>
-                              <div>{viewInvoice.buyerOrderNumber || '—'}</div>
-                            </td>
-                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Buyer Order Date</div>
-                              <div>{viewInvoice.buyerOrderDate || '—'}</div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style={{ borderRight: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Dispatched Through</div>
-                              <div>{viewInvoice.dispatchedThrough || '—'}</div>
-                            </td>
-                            <td style={{ padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Destination</div>
-                              <div>{viewInvoice.destination || '—'}</div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ border: '1px solid black', padding: '4px' }}>
-                      <div style={{ fontSize: '9px', color: '#666' }}>Vehicle Number / Weightment No.</div>
+                    <td colSpan={2} style={{ border: '1px solid black', padding: '4px' }}>
+                      <div style={{ fontSize: '9px', color: '#666' }}>Vehicle Number</div>
                       <div style={{ fontWeight: 700 }}>
-                        {viewInvoice.vehicleNumber || '—'}
-                        {viewInvoice.weightmentNo ? ` / ${viewInvoice.weightmentNo}` : ''}
+                        {viewDC.VehicleNo || '—'}
                       </div>
-                    </td>
-                    <td style={{ border: '1px solid black', padding: '4px' }}>
-                      <div style={{ fontSize: '9px', color: '#666' }}>Terms of Delivery</div>
-                      <div>{viewInvoice.termsOfDelivery || '—'}</div>
                     </td>
                   </tr>
                 </tbody>
@@ -671,37 +628,49 @@ const Invoices: React.FC = () => {
                   <tr style={{ backgroundColor: '#f5f5f5' }}>
                     <th style={{ border: '1px solid black', padding: '4px', width: '25px' }}>Sl No</th>
                     <th style={{ border: '1px solid black', padding: '4px' }}>Description of Goods</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '60px' }}>HSN/SAC</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '60px' }}>HSN Code</th>
                     <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Quantity</th>
                     <th style={{ border: '1px solid black', padding: '4px', width: '70px', textAlign: 'right' }}>Rate (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '40px' }}>Per</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '40px' }}>Unit</th>
                     <th style={{ border: '1px solid black', padding: '4px', width: '45px', textAlign: 'right' }}>Disc %</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Taxable Amt (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '90px', textAlign: 'right' }}>Total (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Amount (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '90px', textAlign: 'right' }}>Discount Amt (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Final Amt (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {viewInvoice.items && viewInvoice.items.map((it, idx) => (
-                    <tr key={it.id}>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{idx + 1}</td>
-                      <td style={{ border: '1px solid black', padding: '4px' }}><strong>{it.productName}</strong></td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.hsnCode}</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.quantity.toFixed(3)}</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.rate.toFixed(2)}</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.unit}</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.discountPercentage}%</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.taxableValue.toFixed(2)}</td>
-                      <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}><strong>{it.total.toFixed(2)}</strong></td>
-                    </tr>
-                  ))}
+                  {viewDC.JsonDCDetails && viewDC.JsonDCDetails.map((it: DCItem, idx: number) => {
+                    const amount = (Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0);
+                    const discountAmount = (amount * (Number(it.Disc) || 0)) / 100;
+                    const finalAmount = amount - discountAmount;
+                    return (
+                      <tr key={it.productId}>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{idx + 1}</td>
+                        <td style={{ border: '1px solid black', padding: '4px' }}><strong>{it.productName}</strong></td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.hsnCode}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{(Number(it.Qty) || 0).toFixed(3)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{(Number(it.RatePerUnit) || 0).toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.Unit}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.Disc}%</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{amount.toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{discountAmount.toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}><strong>{finalAmount.toFixed(2)}</strong></td>
+                      </tr>
+                    );
+                  })}
                   <tr style={{ fontWeight: 700 }}>
                     <td colSpan={3} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Total</td>
                     <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
-                      {viewInvoice.items?.reduce((s, it) => s + it.quantity, 0).toFixed(3)}
+                      {viewDC.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + (Number(it.Qty) || 0), 0).toFixed(3)}
                     </td>
                     <td colSpan={3} style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{viewInvoice.subTotal?.toFixed(2)}</td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>₹{viewInvoice.grandTotal?.toFixed(2)}</td>
+                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
+                      {viewDC.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + ((Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0)), 0).toFixed(2)}
+                    </td>
+                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
+                      {viewDC.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + (((Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0)) * (Number(it.Disc) || 0) / 100), 0).toFixed(2)}
+                    </td>
+                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>₹{viewDC.TotalAmount?.toFixed(2)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -712,38 +681,34 @@ const Invoices: React.FC = () => {
                   <tr>
                     <td style={{ padding: '6px', width: '60%', border: '1px solid black' }}>
                       <div>Tax Summary:</div>
-                      {viewInvoice.taxPer && viewInvoice.taxPer > 0 ? (
-                        <div>GST Tax @ {viewInvoice.taxPer}% is included in total amount.</div>
+                      {viewDC.CGST || viewDC.SGST || viewDC.IGST ? (
+                        <div>GST @ {((viewDC.CGST || 0) + (viewDC.SGST || 0) + (viewDC.IGST || 0))}% is applicable.</div>
                       ) : (
-                        <div>No Tax (0% GST)</div>
+                        <div>No GST Applied (0%)</div>
                       )}
                     </td>
                     <td style={{ padding: '6px', width: '40%', border: '1px solid black' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                        <span>Sub Total:</span>
-                        <span>₹{viewInvoice.subTotal?.toFixed(2)}</span>
-                      </div>
-                      {viewInvoice.totalCgst > 0 && (
+                      {(viewDC.CGST || 0) > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>CGST ({viewInvoice.cgstPer}%):</span>
-                          <span>₹{viewInvoice.totalCgst?.toFixed(2)}</span>
+                          <span>CGST @ {viewDC.CGST}%:</span>
+                          <span>₹{((viewDC.TaxAmount || 0) * (viewDC.CGST || 0) / 100).toFixed(2)}</span>
                         </div>
                       )}
-                      {viewInvoice.totalSgst > 0 && (
+                      {(viewDC.SGST || 0) > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>SGST ({viewInvoice.sgstPer}%):</span>
-                          <span>₹{viewInvoice.totalSgst?.toFixed(2)}</span>
+                          <span>SGST @ {viewDC.SGST}%:</span>
+                          <span>₹{((viewDC.TaxAmount || 0) * (viewDC.SGST || 0) / 100).toFixed(2)}</span>
                         </div>
                       )}
-                      {viewInvoice.totalIgst > 0 && (
+                      {(viewDC.IGST || 0) > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>IGST ({viewInvoice.igstPer}%):</span>
-                          <span>₹{viewInvoice.totalIgst?.toFixed(2)}</span>
+                          <span>IGST @ {viewDC.IGST}%:</span>
+                          <span>₹{((viewDC.TaxAmount || 0) * (viewDC.IGST || 0) / 100).toFixed(2)}</span>
                         </div>
                       )}
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, borderTop: '1px solid #ddd', paddingTop: '4px' }}>
-                        <span>GRAND TOTAL:</span>
-                        <span>₹{viewInvoice.grandTotal?.toFixed(2)}</span>
+                        <span>TOTAL:</span>
+                        <span>₹{viewDC.TotalAmount?.toFixed(2)}</span>
                       </div>
                     </td>
                   </tr>
@@ -754,7 +719,7 @@ const Invoices: React.FC = () => {
 
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewInvoice(null)} sx={{ fontWeight: 600 }}>Close</Button>
+          <Button onClick={() => setViewDC(null)} sx={{ fontWeight: 600 }}>Close</Button>
           <Button variant="contained" startIcon={<Print />} onClick={() => handlePrint()} sx={{ bgcolor: '#ea580c', '&:hover': { bgcolor: '#c2410c' }, fontWeight: 600 }}>
             Print / PDF
           </Button>
@@ -764,4 +729,4 @@ const Invoices: React.FC = () => {
   );
 };
 
-export default Invoices;
+export default DCList;
