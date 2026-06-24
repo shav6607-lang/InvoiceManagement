@@ -50,11 +50,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
-const HSN_CODES: Record<number, string> = {
-  1: '2517',
-  2: '2517',
-  3: '2505',
-};
 
 const STATE_CODES: Record<string, string> = {
   'Andhra Pradesh': '28',
@@ -245,7 +240,7 @@ const CreateInvoice: React.FC = () => {
         const mat = materials.find((m) => m.MaterialId === Number(normalizedValue));
         if (mat) {
           updated.productName = mat.MaterialName;
-          updated.hsnCode = companyHSNCode || HSN_CODES[mat.MaterialId] || String(mat.MaterialId);
+          updated.hsnCode = companyHSNCode ;
           updated.rate = mat.RatePerUnit || 0;
         }
       }
@@ -725,7 +720,7 @@ const CreateInvoice: React.FC = () => {
 
       <Paper 
   sx={{ 
-    mb: 3, 
+    mt: 1.5, 
     p: 1.5, 
     borderRadius: 2, 
     border: '1px solid #e2e8f0',
@@ -734,7 +729,7 @@ const CreateInvoice: React.FC = () => {
   }}
 >
   {/* Header Section */}
-  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',  }}>
     <Box>
       <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 1 }}>
         <Box sx={{ width: 3, height: 12, bgcolor: '#2563eb', borderRadius: 1 }} />
@@ -747,6 +742,7 @@ const CreateInvoice: React.FC = () => {
       size="small" 
       onClick={addItem} 
       sx={{ 
+         m: 0.5,
         bgcolor: '#2563eb', 
         fontSize: '0.75rem', 
         padding: '4px 10px',

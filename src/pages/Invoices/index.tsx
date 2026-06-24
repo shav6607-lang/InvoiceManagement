@@ -399,9 +399,7 @@ const Invoices: React.FC = () => {
   </Box>
 </Box>
       </Card>
-
-      {/* ── Collapsible Grid View Table ── */}
-      <Card elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
+      <Card elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 1, overflow: 'hidden' }}>
         {/* Loading State */}
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>

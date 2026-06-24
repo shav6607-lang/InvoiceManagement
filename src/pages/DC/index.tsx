@@ -493,7 +493,7 @@ const DCList: React.FC = () => {
                 <th style={{ padding: '12px 16px', textAlign: 'right' }}>SGST</th>
                 <th style={{ padding: '12px 16px', textAlign: 'right' }}>IGST</th>
                 <th style={{ padding: '12px 16px', textAlign: 'right' }}>Tax</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Tax Amount</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Amount</th>
                 <th style={{ padding: '12px 16px', textAlign: 'right' }}>Total Amount</th>
               </TableRow>
             </TableHead>

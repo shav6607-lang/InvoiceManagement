@@ -64,14 +64,6 @@ export interface DCItem {
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ;
-
-const HSN_CODES: Record<number, string> = {
-  1: '2517',
-  2: '2517',
-  3: '2505',
-};
-
-
 const genDCNo = () =>
   `DC/${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(2)}/${String(
     Math.floor(Math.random() * 9000 + 1000),
@@ -200,7 +192,7 @@ const CreateDC: React.FC = () => {
         const mat = materials.find((m) => m.MaterialId === Number(normalizedValue));
         if (mat) {
           updated.productName = mat.MaterialName;
-          updated.hsnCode = HSN_CODES[mat.MaterialId] || String(mat.MaterialId);
+          updated.hsnCode =  companyHsnCode;
           updated.rate = mat.RatePerUnit || 0;
         }
       }
