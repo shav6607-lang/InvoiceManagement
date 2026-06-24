@@ -510,18 +510,39 @@ const CreateDC: React.FC = () => {
       )} 
     />
     
-    <Controller 
-      name="vehicleNo" 
-      control={control} 
-      render={({ field }) => (
-        <TextField 
-          {...field} 
-          label="3. Vehicle Number" 
-          fullWidth 
-          size="small" 
-          slotProps={{ htmlInput: { style: { fontSize: '0.825rem', padding: '7.5px 10px' } }, inputLabel: { style: { fontSize: '0.825rem' } } }}
+    <Controller
+      name="vehicleNo"
+      control={control}
+      rules={{
+        required: "Vehicle number required",
+        pattern: {
+          value: /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/i,
+          message: "Enter a valid vehicle number"
+        }
+      }}
+      render={({ field, fieldState: { error } }) => (
+        <TextField
+          {...field}
+          label="3. Vehicle No"
+          fullWidth
+          size="small"
+          error={!!error}
+          helperText={error?.message}
+          slotProps={{
+            htmlInput: {
+              style: {
+                fontSize: "0.825rem",
+                padding: "7.5px 10px"
+              }
+            },
+            inputLabel: {
+              style: {
+                fontSize: "0.825rem"
+              }
+            }
+          }}
         />
-      )} 
+      )}
     />
   </Box>
 </Paper>
