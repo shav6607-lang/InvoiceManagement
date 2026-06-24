@@ -18,6 +18,7 @@ import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { deleteInvoice, fetchInvoices, type Invoice } from '../../redux/slices/invoiceSlice';
 import { format } from 'date-fns';
 import { useReactToPrint } from 'react-to-print';
+import html2pdf from 'html2pdf.js';
 
 // ─── Collapsible Row Sub-Component ──────────────────────────────────────────
 interface RowProps {
@@ -159,16 +160,36 @@ const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
   );
 };
 
+// ─── Company Info Interface ─────────────────────────────────────────────────
+interface CompanyInfo {
+  CompanyId: number;
+  Name: string;
+  Address?: string;
+  GSTNo?: string;
+  State?: string;
+  StateCode?: string;
+  Email?: string;
+  Phone?: string;
+  BankName?: string;
+  BankBranch?: string;
+  AccountNo?: string;
+  IFSCCode?: string;
+  BankAddress?: string;
+}
+
 // ─── Main Invoices Component ────────────────────────────────────────────────
 const Invoices: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { invoices, loading, error } = useAppSelector((state) => state.invoices);
+  const { token } = useAppSelector((state) => state.auth);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // States
   const [searchQuery, setSearchQuery] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [companies, setCompanies] = useState<CompanyInfo[]>([]);
 
   // Date and search filters applied on submit
   const [filterSearch, setFilterSearch] = useState('');
@@ -180,6 +201,24 @@ const Invoices: React.FC = () => {
     console.log('📋 Invoices component mounted, fetching data...');
     dispatch(fetchInvoices());
   }, [dispatch]);
+
+  // Fetch company details from API
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE}/Material/GetCompanies`, { headers });
+        const json = await res.json();
+        if (Array.isArray(json?.Data)) {
+          setCompanies(json.Data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch companies:', e);
+      }
+    };
+    fetchCompanies();
+  }, [token, API_BASE]);
 
   React.useEffect(() => {
     const today = new Date();
@@ -208,6 +247,29 @@ const Invoices: React.FC = () => {
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
+
+  const [downloadInvoice, setDownloadInvoice] = useState<Invoice | null>(null);
+  const downloadDialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (downloadInvoice && downloadDialogRef.current) {
+      const element = downloadDialogRef.current;
+      const opt = {
+        margin:       0.5,
+        filename:     `Invoice_${downloadInvoice.invoiceNumber || downloadInvoice.id}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+      
+      setTimeout(() => {
+        html2pdf().set(opt).from(element).save().then(() => {
+           setDownloadInvoice(null);
+        });
+      }, 500);
+    }
+  }, [downloadInvoice]);
+
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -251,6 +313,256 @@ const Invoices: React.FC = () => {
     }
     return true;
   });
+
+  
+  const renderPrintContent = (printData: Invoice, ref?: React.Ref<HTMLDivElement>) => (
+    <Box ref={ref} sx={{ p: 2, bgcolor: 'white', color: 'black', fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
+              {/* Header – Dynamic Company Details */}
+              {(() => {
+                const co = companies.length > 0 ? companies[0] : null;
+                const coName = co?.Name || 'M/s. SRI MADESHWARA STONE CRUSHER';
+                const coAddress = co?.Address || 'Sy No: 136/4A2, Kakalachinte Village, Mandikal Hobli, Chikkaballapur Taluk, Chikkaballapur - 562104';
+                const coGST = co?.GSTNo || '29ABKFS9495G1Z9';
+                const coState = co?.State || 'KARNATAKA';
+                const coCode = co?.StateCode || '29';
+                const coEmail = co?.Email || 'srimadeshwaragroup@gmail.com';
+                const coPhone = co?.Phone || '';
+                return (
+                  <Box sx={{ textAlign: 'center', borderBottom: '2px solid black', pb: 1, mb: 1 }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: '16px', color: 'black', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {coName}
+                    </Typography>
+                    <Typography sx={{ fontSize: '10px', color: 'black' }}>{coAddress}</Typography>
+                    <Typography sx={{ fontSize: '10px', color: 'black' }}>
+                      GSTIN: {coGST} | State: {coState} ({coCode})
+                    </Typography>
+                    {(coPhone || coEmail) && (
+                      <Typography sx={{ fontSize: '10px', color: 'black' }}>
+                        {coPhone ? `Ph: ${coPhone}` : ''}{coPhone && coEmail ? ' | ' : ''}Email: {coEmail}
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              })()}
+              <hr style={{ border: 'none', borderTop: '2px solid black', margin: '4px 0' }} />
+              <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '13px', mb: 1, color: 'black' }}>TAX INVOICE</Typography>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', marginBottom: '8px' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ width: '50%', border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
+                      <div style={{ fontWeight: 700 }}>Consignee (Ship To):</div>
+                      <div style={{ fontWeight: 700 }}>{printData.consigneeName}</div>
+                      <div>{printData.consigneeAddress}</div>
+                      <div>GSTIN: {printData.consigneeGstin || '—'}</div>
+                      <div>State: {printData.consigneeState} | Code: {printData.consigneeStateCode || '—'}</div>
+                      <div>Phone: {printData.consigneePhone}</div>
+                    </td>
+                    <td style={{ width: '50%', border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <tbody>
+                          <tr>
+                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px', width: '50%' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>Invoice No.</div>
+                              <div style={{ fontWeight: 700 }}>{printData.invoiceNumber}</div>
+                            </td>
+                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>Dated</div>
+                              <div style={{ fontWeight: 700 }}>{printData.invoiceDate}</div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>Delivery Note</div>
+                              <div>{printData.deliveryNote || '—'}</div>
+                            </td>
+                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>Payment Terms</div>
+                              <div>{printData.paymentTerms || '—'}</div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
+                      <div style={{ fontWeight: 700 }}>Buyer (Bill To):</div>
+                      {printData.sameAsConsignee ? (
+                        <div>Same as Consignee</div>
+                      ) : (
+                        <>
+                          <div style={{ fontWeight: 700 }}>{printData.buyerName}</div>
+                          <div>{printData.buyerAddress}</div>
+                          <div>GSTIN: {printData.buyerGstin || '—'}</div>
+                          <div>State: {printData.buyerState} | Code: {printData.buyerStateCode || '—'}</div>
+                        </>
+                      )}
+                      {printData.urn && <div style={{ fontSize: '10px', marginTop: '4px', color: 'blue', fontWeight: 600 }}>URN: REGISTERED</div>}
+                    </td>
+                    <td style={{ border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <tbody>
+                          <tr>
+                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px', width: '50%' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>Buyer Order No.</div>
+                              <div>{printData.buyerOrderNumber || '—'}</div>
+                            </td>
+                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>Buyer Order Date</div>
+                              <div>{printData.buyerOrderDate || '—'}</div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style={{ borderRight: '1px solid black', padding: '4px' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>Dispatched Through</div>
+                              <div>{printData.dispatchedThrough || '—'}</div>
+                            </td>
+                            <td style={{ padding: '4px' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>Destination</div>
+                              <div>{printData.destination || '—'}</div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: '1px solid black', padding: '4px' }}>
+                      <div style={{ fontSize: '9px', color: '#666' }}>Vehicle Number</div>
+                      <div style={{ fontWeight: 700 }}>
+                        {printData.vehicleNumber || '—'}
+                      </div>
+                    </td>
+                    <td style={{ border: '1px solid black', padding: '4px' }}>
+                      <div style={{ fontSize: '9px', color: '#666' }}>Terms of Delivery</div>
+                      <div>{printData.termsOfDelivery || '—'}</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Items Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginBottom: '8px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f5f5f5' }}>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '25px' }}>Sl No</th>
+                    <th style={{ border: '1px solid black', padding: '4px' }}>Description of Goods</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '60px' }}>HSN/SAC</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Quantity</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '70px', textAlign: 'right' }}>Rate (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '40px' }}>Per</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '45px', textAlign: 'right' }}>Disc %</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Amount (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Disc Amt (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '90px', textAlign: 'right' }}>Final Amt (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printData.items && printData.items.map((it, idx) => {
+                    const discountAmount = (it.amount * it.discountPercentage) / 100;
+                    const finalAmount = it.amount - discountAmount;
+                    return (
+                      <tr key={it.id}>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{idx + 1}</td>
+                        <td style={{ border: '1px solid black', padding: '4px' }}><strong>{it.productName}</strong></td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.hsnCode}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.quantity.toFixed(3)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.rate.toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.unit}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.discountPercentage}%</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.amount.toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{discountAmount.toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}><strong>{finalAmount.toFixed(2)}</strong></td>
+                      </tr>
+                    );
+                  })}
+                  <tr style={{ fontWeight: 700 }}>
+                    <td colSpan={3} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Total</td>
+                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
+                      {printData.items?.reduce((s, it) => s + it.quantity, 0).toFixed(3)}
+                    </td>
+                    <td colSpan={3} style={{ border: '1px solid black' }}></td>
+                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{printData.subTotal?.toFixed(2)}</td>
+                    <td colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>₹{printData.grandTotal?.toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Totals Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginTop: '-1px' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '6px', width: '60%', border: '1px solid black' }}>
+                      <div>Tax Summary:</div>
+                      {printData.taxPer && printData.taxPer > 0 ? (
+                        <div>GST Tax @ {printData.taxPer}% is included in total amount.</div>
+                      ) : (
+                        <div>No Tax (0% GST)</div>
+                      )}
+                    </td>
+                    <td style={{ padding: '6px', width: '40%', border: '1px solid black' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                        <span>Sub Total:</span>
+                        <span>₹{printData.subTotal?.toFixed(2)}</span>
+                      </div>
+                      {printData.totalCgst > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                          <span>CGST ({printData.cgstPer}%):</span>
+                          <span>₹{printData.totalCgst?.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {printData.totalSgst > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                          <span>SGST ({printData.sgstPer}%):</span>
+                          <span>₹{printData.totalSgst?.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {printData.totalIgst > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                          <span>IGST ({printData.igstPer}%):</span>
+                          <span>₹{printData.totalIgst?.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, borderTop: '1px solid #ddd', paddingTop: '4px' }}>
+                        <span>GRAND TOTAL:</span>
+                        <span>₹{printData.grandTotal?.toFixed(2)}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              {/* Bank Details & Signatory */}
+              {(() => {
+                const co = companies.length > 0 ? companies[0] : null;
+                const bankName = co?.BankName || 'THE FEDERAL BANK LIMITED';
+                const bankBranch = co?.BankBranch || 'CHIKKAJALA';
+                const accountNo = co?.AccountNo || '20860200000910';
+                const ifscCode = co?.IFSCCode || 'FDRL0002086';
+                const bankAddress = co?.BankAddress || 'CHIKKAJALA';
+                return (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '10px', marginTop: '-1px' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ padding: '6px', width: '60%', border: '1px solid black', verticalAlign: 'top' }}>
+                          <div style={{ fontWeight: 700, marginBottom: '4px' }}>Bank Details:</div>
+                          <div><strong>Bank Name:</strong> {bankName}</div>
+                          <div><strong>Branch:</strong> {bankBranch}</div>
+                          <div><strong>Account No:</strong> {accountNo}</div>
+                          <div><strong>IFSC Code:</strong> {ifscCode}</div>
+                          <div><strong>Bank Address:</strong> {bankAddress}</div>
+                        </td>
+                        <td style={{ padding: '6px', width: '40%', border: '1px solid black', verticalAlign: 'bottom', textAlign: 'center' }}>
+                          <div style={{ marginBottom: '36px', fontSize: '9px' }}>Certified that the particulars given above are true and correct.</div>
+                          <div style={{ fontWeight: 700, borderTop: '1px solid black', paddingTop: '4px' }}>Authorised Signatory</div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </Box>
+  );
 
   const handleDelete = () => {
     if (deleteId) {
@@ -466,18 +778,7 @@ const Invoices: React.FC = () => {
                     key={row.id}
                     row={row}
                     onView={(inv) => setViewInvoice(inv)}
-                    onDownload={(inv) => {
-                      // Download invoice JSON as a file
-                      const blob = new Blob([JSON.stringify(inv, null, 2)], { type: 'application/json' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `invoice_${inv.invoiceNumber || inv.id}.json`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      URL.revokeObjectURL(url);
-                    }}
+                    onDownload={(inv) => { setDownloadInvoice(inv); }}
                   />
                 ))}
               {filteredInvoices.length === 0 && (
@@ -525,204 +826,7 @@ const Invoices: React.FC = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          {viewInvoice && (
-            <Box ref={printDialogRef} sx={{ p: 2, bgcolor: 'white', color: 'black', fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
-              {/* Header */}
-              <Box sx={{ textAlign: 'center', mb: 1 }}>
-                <Typography sx={{ fontWeight: 800, fontSize: '18px', color: 'black' }}>STONE CRUSH COMPANY</Typography>
-                <Typography sx={{ fontSize: '11px', color: 'black' }}>123 Industrial Area, Bangalore, Karnataka</Typography>
-                <Typography sx={{ fontSize: '11px', color: 'black' }}>GSTIN: 29AAACS2300D1Z4 | State: Karnataka (29)</Typography>
-              </Box>
-              <hr style={{ border: 'none', borderTop: '2px solid black', margin: '4px 0' }} />
-              <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '13px', mb: 1, color: 'black' }}>TAX INVOICE</Typography>
-
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', marginBottom: '8px' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ width: '50%', border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 700 }}>Consignee (Ship To):</div>
-                      <div style={{ fontWeight: 700 }}>{viewInvoice.consigneeName}</div>
-                      <div>{viewInvoice.consigneeAddress}</div>
-                      <div>GSTIN: {viewInvoice.consigneeGstin || '—'}</div>
-                      <div>State: {viewInvoice.consigneeState} | Code: {viewInvoice.consigneeStateCode || '—'}</div>
-                      <div>Phone: {viewInvoice.consigneePhone}</div>
-                    </td>
-                    <td style={{ width: '50%', border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px', width: '50%' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Invoice No.</div>
-                              <div style={{ fontWeight: 700 }}>{viewInvoice.invoiceNumber}</div>
-                            </td>
-                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Dated</div>
-                              <div style={{ fontWeight: 700 }}>{viewInvoice.invoiceDate}</div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Delivery Note</div>
-                              <div>{viewInvoice.deliveryNote || '—'}</div>
-                            </td>
-                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Payment Terms</div>
-                              <div>{viewInvoice.paymentTerms || '—'}</div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 700 }}>Buyer (Bill To):</div>
-                      {viewInvoice.sameAsConsignee ? (
-                        <div>Same as Consignee</div>
-                      ) : (
-                        <>
-                          <div style={{ fontWeight: 700 }}>{viewInvoice.buyerName}</div>
-                          <div>{viewInvoice.buyerAddress}</div>
-                          <div>GSTIN: {viewInvoice.buyerGstin || '—'}</div>
-                          <div>State: {viewInvoice.buyerState} | Code: {viewInvoice.buyerStateCode || '—'}</div>
-                        </>
-                      )}
-                      {viewInvoice.urn && <div style={{ fontSize: '10px', marginTop: '4px', color: 'blue', fontWeight: 600 }}>URN: REGISTERED</div>}
-                    </td>
-                    <td style={{ border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px', width: '50%' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Buyer Order No.</div>
-                              <div>{viewInvoice.buyerOrderNumber || '—'}</div>
-                            </td>
-                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Buyer Order Date</div>
-                              <div>{viewInvoice.buyerOrderDate || '—'}</div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style={{ borderRight: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Dispatched Through</div>
-                              <div>{viewInvoice.dispatchedThrough || '—'}</div>
-                            </td>
-                            <td style={{ padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Destination</div>
-                              <div>{viewInvoice.destination || '—'}</div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ border: '1px solid black', padding: '4px' }}>
-                      <div style={{ fontSize: '9px', color: '#666' }}>Vehicle Number</div>
-                      <div style={{ fontWeight: 700 }}>
-                        {viewInvoice.vehicleNumber || '—'}
-                      </div>
-                    </td>
-                    <td style={{ border: '1px solid black', padding: '4px' }}>
-                      <div style={{ fontSize: '9px', color: '#666' }}>Terms of Delivery</div>
-                      <div>{viewInvoice.termsOfDelivery || '—'}</div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              {/* Items Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginBottom: '8px' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#f5f5f5' }}>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '25px' }}>Sl No</th>
-                    <th style={{ border: '1px solid black', padding: '4px' }}>Description of Goods</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '60px' }}>HSN/SAC</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Quantity</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '70px', textAlign: 'right' }}>Rate (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '40px' }}>Per</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '45px', textAlign: 'right' }}>Disc %</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Amount (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Disc Amt (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '90px', textAlign: 'right' }}>Final Amt (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {viewInvoice.items && viewInvoice.items.map((it, idx) => {
-                    const discountAmount = (it.amount * it.discountPercentage) / 100;
-                    const finalAmount = it.amount - discountAmount;
-                    return (
-                      <tr key={it.id}>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{idx + 1}</td>
-                        <td style={{ border: '1px solid black', padding: '4px' }}><strong>{it.productName}</strong></td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.hsnCode}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.quantity.toFixed(3)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.rate.toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.unit}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.discountPercentage}%</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.amount.toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{discountAmount.toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}><strong>{finalAmount.toFixed(2)}</strong></td>
-                      </tr>
-                    );
-                  })}
-                  <tr style={{ fontWeight: 700 }}>
-                    <td colSpan={3} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Total</td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
-                      {viewInvoice.items?.reduce((s, it) => s + it.quantity, 0).toFixed(3)}
-                    </td>
-                    <td colSpan={3} style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{viewInvoice.subTotal?.toFixed(2)}</td>
-                    <td colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>₹{viewInvoice.grandTotal?.toFixed(2)}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              {/* Totals Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginTop: '-1px' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '6px', width: '60%', border: '1px solid black' }}>
-                      <div>Tax Summary:</div>
-                      {viewInvoice.taxPer && viewInvoice.taxPer > 0 ? (
-                        <div>GST Tax @ {viewInvoice.taxPer}% is included in total amount.</div>
-                      ) : (
-                        <div>No Tax (0% GST)</div>
-                      )}
-                    </td>
-                    <td style={{ padding: '6px', width: '40%', border: '1px solid black' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                        <span>Sub Total:</span>
-                        <span>₹{viewInvoice.subTotal?.toFixed(2)}</span>
-                      </div>
-                      {viewInvoice.totalCgst > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>CGST ({viewInvoice.cgstPer}%):</span>
-                          <span>₹{viewInvoice.totalCgst?.toFixed(2)}</span>
-                        </div>
-                      )}
-                      {viewInvoice.totalSgst > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>SGST ({viewInvoice.sgstPer}%):</span>
-                          <span>₹{viewInvoice.totalSgst?.toFixed(2)}</span>
-                        </div>
-                      )}
-                      {viewInvoice.totalIgst > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>IGST ({viewInvoice.igstPer}%):</span>
-                          <span>₹{viewInvoice.totalIgst?.toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, borderTop: '1px solid #ddd', paddingTop: '4px' }}>
-                        <span>GRAND TOTAL:</span>
-                        <span>₹{viewInvoice.grandTotal?.toFixed(2)}</span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </Box>
-          )}
+          {viewInvoice && renderPrintContent(viewInvoice, printDialogRef)}
 
         </DialogContent>
         <DialogActions>
@@ -732,6 +836,10 @@ const Invoices: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+    
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+        {downloadInvoice && renderPrintContent(downloadInvoice, downloadDialogRef)}
+      </div>
     </Box>
   );
 };

@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { deleteDC, fetchDCs, type DC } from '../../redux/slices/dcSlice';
 import { useReactToPrint } from 'react-to-print';
+import html2pdf from 'html2pdf.js';
 
 // Type definition for DC Line Items
 interface DCItem {
@@ -166,6 +167,28 @@ const DCList: React.FC = () => {
   const [filterFromDate, setFilterFromDate] = useState('');
   const [filterToDate, setFilterToDate] = useState('');
 
+  const { token } = useAppSelector((state) => state.auth);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+  const [companies, setCompanies] = useState<CompanyInfo[]>([]);
+
+  // Fetch company details from API
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE}/Material/GetCompanies`, { headers });
+        const json = await res.json();
+        if (Array.isArray(json?.Data)) {
+          setCompanies(json.Data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch companies:', e);
+      }
+    };
+    fetchCompanies();
+  }, [token, API_BASE]);
+
   // Fetch DCs on component mount
   useEffect(() => {
     console.log('📋 DC List component mounted, fetching data...');
@@ -204,6 +227,29 @@ const DCList: React.FC = () => {
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [viewDC, setViewDC] = useState<DC | null>(null);
+
+  const [downloadDC, setDownloadDC] = useState<DC | null>(null);
+  const downloadDialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (downloadDC && downloadDialogRef.current) {
+      const element = downloadDialogRef.current;
+      const opt = {
+        margin:       0.5,
+        filename:     `DC_${downloadDC.DCNo || downloadDC.id}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+      
+      setTimeout(() => {
+        html2pdf().set(opt).from(element).save().then(() => {
+           setDownloadDC(null);
+        });
+      }, 500);
+    }
+  }, [downloadDC]);
+
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -274,6 +320,200 @@ const DCList: React.FC = () => {
   
   console.log('📊 Filtered DCs:', filteredDCs);
   console.log('📊 Filter params - search:', filterSearch, 'from:', filterFromDate, 'to:', filterToDate);
+
+  
+  const renderPrintContent = (printData: DC, ref?: React.Ref<HTMLDivElement>) => (
+    <Box ref={ref} sx={{ p: 2, bgcolor: 'white', color: 'black', fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
+              {/* Header – Dynamic Company Details */}
+              {(() => {
+                const co = companies.length > 0 ? companies[0] : null;
+                const coName = co?.Name || 'M/s. SRI MADESHWARA STONE CRUSHER';
+                const coAddress = co?.Address || 'Sy No: 136/4A2, Kakalachinte Village, Mandikal Hobli, Chikkaballapur Taluk, Chikkaballapur - 562104';
+                const coGST = co?.GSTNo || '29ABKFS9495G1Z9';
+                const coState = co?.State || 'KARNATAKA';
+                const coCode = co?.StateCode || '29';
+                const coEmail = co?.Email || 'srimadeshwaragroup@gmail.com';
+                const coPhone = co?.Phone || '';
+                return (
+                  <Box sx={{ textAlign: 'center', borderBottom: '2px solid black', pb: 1, mb: 1 }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: '16px', color: 'black', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {coName}
+                    </Typography>
+                    <Typography sx={{ fontSize: '10px', color: 'black' }}>{coAddress}</Typography>
+                    <Typography sx={{ fontSize: '10px', color: 'black' }}>
+                      GSTIN: {coGST} | State: {coState} ({coCode})
+                    </Typography>
+                    {(coPhone || coEmail) && (
+                      <Typography sx={{ fontSize: '10px', color: 'black' }}>
+                        {coPhone ? `Ph: ${coPhone}` : ''}{coPhone && coEmail ? ' | ' : ''}Email: {coEmail}
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              })()}
+              <hr style={{ border: 'none', borderTop: '2px solid black', margin: '4px 0' }} />
+              <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '13px', mb: 1, color: 'black' }}>DELIVERY CHALLAN</Typography>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', marginBottom: '8px' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ width: '50%', border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
+                      <div style={{ fontWeight: 700 }}>DC Details:</div>
+                      <div><strong>Company:</strong> {companies.find(c => c.CompanyId === printData.CompanyId)?.Name || 'M/s. SRI MADESHWARA STONE CRUSHER'}</div>
+                      <div style={{ marginTop: '8px' }}>Created By: {printData.CreatedBy}</div>
+                      <div>Created On: {printData.CreatedOn}</div>
+                    </td>
+                    <td style={{ width: '50%', border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <tbody>
+                          <tr>
+                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px', width: '50%' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>DC No.</div>
+                              <div style={{ fontWeight: 700 }}>{printData.DCNo}</div>
+                            </td>
+                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>DC Date</div>
+                              <div style={{ fontWeight: 700 }}>{printData.DCDate}</div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={2} style={{ border: '1px solid black', padding: '4px' }}>
+                      <div style={{ fontSize: '9px', color: '#666' }}>Vehicle Number</div>
+                      <div style={{ fontWeight: 700 }}>
+                        {printData.VehicleNo || '—'}
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Items Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginBottom: '8px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f5f5f5' }}>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '25px' }}>Sl No</th>
+                    <th style={{ border: '1px solid black', padding: '4px' }}>Description of Goods</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '60px' }}>HSN Code</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Quantity</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '70px', textAlign: 'right' }}>Rate (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '40px' }}>Unit</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '45px', textAlign: 'right' }}>Disc %</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Amount (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '90px', textAlign: 'right' }}>Discount Amt (₹)</th>
+                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Final Amt (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printData.JsonDCDetails && printData.JsonDCDetails.map((it: DCItem, idx: number) => {
+                    const amount = (Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0);
+                    const discountAmount = (amount * (Number(it.Disc) || 0)) / 100;
+                    const finalAmount = amount - discountAmount;
+                    return (
+                      <tr key={it.productId}>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{idx + 1}</td>
+                        <td style={{ border: '1px solid black', padding: '4px' }}><strong>{it.productName}</strong></td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.hsnCode}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{(Number(it.Qty) || 0).toFixed(3)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{(Number(it.RatePerUnit) || 0).toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.Unit}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.Disc}%</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{amount.toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{discountAmount.toFixed(2)}</td>
+                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}><strong>{finalAmount.toFixed(2)}</strong></td>
+                      </tr>
+                    );
+                  })}
+                  <tr style={{ fontWeight: 700 }}>
+                    <td colSpan={3} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Total</td>
+                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
+                      {printData.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + (Number(it.Qty) || 0), 0).toFixed(3)}
+                    </td>
+                    <td colSpan={3} style={{ border: '1px solid black' }}></td>
+                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
+                      {printData.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + ((Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0)), 0).toFixed(2)}
+                    </td>
+                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
+                      {printData.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + (((Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0)) * (Number(it.Disc) || 0) / 100), 0).toFixed(2)}
+                    </td>
+                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>₹{printData.TotalAmount?.toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Totals Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginTop: '-1px' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '6px', width: '60%', border: '1px solid black' }}>
+                      <div>Tax Summary:</div>
+                      {printData.CGST || printData.SGST || printData.IGST ? (
+                        <div>GST @ {((printData.CGST || 0) + (printData.SGST || 0) + (printData.IGST || 0))}% is applicable.</div>
+                      ) : (
+                        <div>No GST Applied (0%)</div>
+                      )}
+                    </td>
+                    <td style={{ padding: '6px', width: '40%', border: '1px solid black' }}>
+                      {(printData.CGST || 0) > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                          <span>CGST @ {printData.CGST}%:</span>
+                          <span>₹{((printData.TaxAmount || 0) * (printData.CGST || 0) / 100).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {(printData.SGST || 0) > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                          <span>SGST @ {printData.SGST}%:</span>
+                          <span>₹{((printData.TaxAmount || 0) * (printData.SGST || 0) / 100).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {(printData.IGST || 0) > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                          <span>IGST @ {printData.IGST}%:</span>
+                          <span>₹{((printData.TaxAmount || 0) * (printData.IGST || 0) / 100).toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, borderTop: '1px solid #ddd', paddingTop: '4px' }}>
+                        <span>TOTAL:</span>
+                        <span>₹{printData.TotalAmount?.toFixed(2)}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              {/* Bank Details & Signatory */}
+              {(() => {
+                const co = companies.length > 0 ? companies[0] : null;
+                const bankName = co?.BankName || 'THE FEDERAL BANK LIMITED';
+                const bankBranch = co?.BankBranch || 'CHIKKAJALA';
+                const accountNo = co?.AccountNo || '20860200000910';
+                const ifscCode = co?.IFSCCode || 'FDRL0002086';
+                const bankAddress = co?.BankAddress || 'CHIKKAJALA';
+                return (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '10px', marginTop: '-1px' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ padding: '6px', width: '60%', border: '1px solid black', verticalAlign: 'top' }}>
+                          <div style={{ fontWeight: 700, marginBottom: '4px' }}>Bank Details:</div>
+                          <div><strong>Bank Name:</strong> {bankName}</div>
+                          <div><strong>Branch:</strong> {bankBranch}</div>
+                          <div><strong>Account No:</strong> {accountNo}</div>
+                          <div><strong>IFSC Code:</strong> {ifscCode}</div>
+                          <div><strong>Bank Address:</strong> {bankAddress}</div>
+                        </td>
+                        <td style={{ padding: '6px', width: '40%', border: '1px solid black', verticalAlign: 'bottom', textAlign: 'center' }}>
+                          <div style={{ marginBottom: '36px', fontSize: '9px' }}>Certified that the particulars given above are true and correct.</div>
+                          <div style={{ fontWeight: 700, borderTop: '1px solid black', paddingTop: '4px' }}>Authorised Signatory</div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </Box>
+  );
 
   const handleDelete = () => {
     if (deleteId) {
@@ -514,17 +754,7 @@ const DCList: React.FC = () => {
                       key={row.SlNo || idx}
                       row={row}
                       onView={(dc) => setViewDC(dc)}
-                      onDownload={(dc) => {
-                        const blob = new Blob([JSON.stringify(dc, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `DC_${dc.DCNo}.json`;
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                        URL.revokeObjectURL(url);
-                      }}
+                      onDownload={(dc) => { setDownloadDC(dc); }}
                     />
                   );
                 });
@@ -574,148 +804,7 @@ const DCList: React.FC = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          {viewDC && (
-            <Box ref={printDialogRef} sx={{ p: 2, bgcolor: 'white', color: 'black', fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
-              {/* Header */}
-              <Box sx={{ textAlign: 'center', mb: 1 }}>
-                <Typography sx={{ fontWeight: 800, fontSize: '18px', color: 'black' }}>STONE CRUSH COMPANY</Typography>
-                <Typography sx={{ fontSize: '11px', color: 'black' }}>123 Industrial Area, Bangalore, Karnataka</Typography>
-                <Typography sx={{ fontSize: '11px', color: 'black' }}>GSTIN: 29AAACS2300D1Z4 | State: Karnataka (29)</Typography>
-              </Box>
-              <hr style={{ border: 'none', borderTop: '2px solid black', margin: '4px 0' }} />
-              <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '13px', mb: 1, color: 'black' }}>DELIVERY CHALLAN</Typography>
-
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', marginBottom: '8px' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ width: '50%', border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 700 }}>DC Details:</div>
-                      <div>Company ID: {viewDC.CompanyId}</div>
-                      <div style={{ marginTop: '8px' }}>Created By: {viewDC.CreatedBy}</div>
-                      <div>Created On: {viewDC.CreatedOn}</div>
-                    </td>
-                    <td style={{ width: '50%', border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px', width: '50%' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>DC No.</div>
-                              <div style={{ fontWeight: 700 }}>{viewDC.DCNo}</div>
-                            </td>
-                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>DC Date</div>
-                              <div style={{ fontWeight: 700 }}>{viewDC.DCDate}</div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colSpan={2} style={{ border: '1px solid black', padding: '4px' }}>
-                      <div style={{ fontSize: '9px', color: '#666' }}>Vehicle Number</div>
-                      <div style={{ fontWeight: 700 }}>
-                        {viewDC.VehicleNo || '—'}
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              {/* Items Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginBottom: '8px' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#f5f5f5' }}>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '25px' }}>Sl No</th>
-                    <th style={{ border: '1px solid black', padding: '4px' }}>Description of Goods</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '60px' }}>HSN Code</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Quantity</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '70px', textAlign: 'right' }}>Rate (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '40px' }}>Unit</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '45px', textAlign: 'right' }}>Disc %</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Amount (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '90px', textAlign: 'right' }}>Discount Amt (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Final Amt (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {viewDC.JsonDCDetails && viewDC.JsonDCDetails.map((it: DCItem, idx: number) => {
-                    const amount = (Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0);
-                    const discountAmount = (amount * (Number(it.Disc) || 0)) / 100;
-                    const finalAmount = amount - discountAmount;
-                    return (
-                      <tr key={it.productId}>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{idx + 1}</td>
-                        <td style={{ border: '1px solid black', padding: '4px' }}><strong>{it.productName}</strong></td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.hsnCode}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{(Number(it.Qty) || 0).toFixed(3)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{(Number(it.RatePerUnit) || 0).toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.Unit}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.Disc}%</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{amount.toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{discountAmount.toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}><strong>{finalAmount.toFixed(2)}</strong></td>
-                      </tr>
-                    );
-                  })}
-                  <tr style={{ fontWeight: 700 }}>
-                    <td colSpan={3} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Total</td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
-                      {viewDC.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + (Number(it.Qty) || 0), 0).toFixed(3)}
-                    </td>
-                    <td colSpan={3} style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
-                      {viewDC.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + ((Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0)), 0).toFixed(2)}
-                    </td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
-                      {viewDC.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + (((Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0)) * (Number(it.Disc) || 0) / 100), 0).toFixed(2)}
-                    </td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>₹{viewDC.TotalAmount?.toFixed(2)}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              {/* Totals Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginTop: '-1px' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '6px', width: '60%', border: '1px solid black' }}>
-                      <div>Tax Summary:</div>
-                      {viewDC.CGST || viewDC.SGST || viewDC.IGST ? (
-                        <div>GST @ {((viewDC.CGST || 0) + (viewDC.SGST || 0) + (viewDC.IGST || 0))}% is applicable.</div>
-                      ) : (
-                        <div>No GST Applied (0%)</div>
-                      )}
-                    </td>
-                    <td style={{ padding: '6px', width: '40%', border: '1px solid black' }}>
-                      {(viewDC.CGST || 0) > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>CGST @ {viewDC.CGST}%:</span>
-                          <span>₹{((viewDC.TaxAmount || 0) * (viewDC.CGST || 0) / 100).toFixed(2)}</span>
-                        </div>
-                      )}
-                      {(viewDC.SGST || 0) > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>SGST @ {viewDC.SGST}%:</span>
-                          <span>₹{((viewDC.TaxAmount || 0) * (viewDC.SGST || 0) / 100).toFixed(2)}</span>
-                        </div>
-                      )}
-                      {(viewDC.IGST || 0) > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>IGST @ {viewDC.IGST}%:</span>
-                          <span>₹{((viewDC.TaxAmount || 0) * (viewDC.IGST || 0) / 100).toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, borderTop: '1px solid #ddd', paddingTop: '4px' }}>
-                        <span>TOTAL:</span>
-                        <span>₹{viewDC.TotalAmount?.toFixed(2)}</span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </Box>
-          )}
+          {viewDC && renderPrintContent(viewDC, printDialogRef)}
 
         </DialogContent>
         <DialogActions>
@@ -725,6 +814,10 @@ const DCList: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+    
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+        {downloadDC && renderPrintContent(downloadDC, downloadDialogRef)}
+      </div>
     </Box>
   );
 };
