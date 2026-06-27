@@ -40,11 +40,6 @@ interface RowProps {
 
 const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
   const [open, setOpen] = useState(false);
-  
-  console.log('🎨 [Row] Rendering row:', row);
-  console.log('🎨 [Row] Row DCNo:', row?.DCNo);
-  console.log('🎨 [Row] Row VehicleNo:', row?.VehicleNo);
-
   return (
     <>
       <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
@@ -324,16 +319,15 @@ const DCList: React.FC = () => {
   
   const renderPrintContent = (printData: DC, ref?: React.Ref<HTMLDivElement>) => (
     <Box ref={ref} sx={{ p: 2, bgcolor: 'white', color: 'black', fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
-              {/* Header – Dynamic Company Details */}
               {(() => {
                 const co = companies.length > 0 ? companies[0] : null;
-                const coName = co?.Name || 'M/s. SRI MADESHWARA STONE CRUSHER';
-                const coAddress = co?.Address || 'Sy No: 136/4A2, Kakalachinte Village, Mandikal Hobli, Chikkaballapur Taluk, Chikkaballapur - 562104';
-                const coGST = co?.GSTNo || '29ABKFS9495G1Z9';
-                const coState = co?.State || 'KARNATAKA';
-                const coCode = co?.StateCode || '29';
-                const coEmail = co?.Email || 'srimadeshwaragroup@gmail.com';
-                const coPhone = co?.Phone || '';
+                const coName = co?.Name ;
+                const coAddress = co?.Address;
+                const coGST = co?.GSTNO ;
+                const coState = co?.State;
+                const coCode = co?.StateCode;
+                const coEmail = co?.Email ;
+                const coPhone = co?.Phone ;
                 return (
                   <Box sx={{ textAlign: 'center', borderBottom: '2px solid black', pb: 1, mb: 1 }}>
                     <Typography sx={{ fontWeight: 900, fontSize: '16px', color: 'black', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -358,10 +352,26 @@ const DCList: React.FC = () => {
                 <tbody>
                   <tr>
                     <td style={{ width: '50%', border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 700 }}>DC Details:</div>
-                      <div><strong>Company:</strong> {companies.find(c => c.CompanyId === printData.CompanyId)?.Name || 'M/s. SRI MADESHWARA STONE CRUSHER'}</div>
-                      <div style={{ marginTop: '8px' }}>Created By: {printData.CreatedBy}</div>
-                      <div>Created On: {printData.CreatedOn}</div>
+                      <div style={{ fontWeight: 700, marginBottom: '4px' }}>Consignee / Bill To:</div>
+                      <div style={{ fontWeight: 700, fontSize: '12px' }}>
+                        {companies.find(c => c.CompanyId === printData.CompanyId)?.Name || 'M/s. SRI MADESHWARA STONE CRUSHER'}
+                      </div>
+                      {companies.find(c => c.CompanyId === printData.CompanyId)?.Address && (
+                        <div style={{ fontSize: '10px', marginTop: '2px' }}>
+                          {companies.find(c => c.CompanyId === printData.CompanyId)?.Address}
+                        </div>
+                      )}
+                      {companies.find(c => c.CompanyId === printData.CompanyId)?.GSTNo && (
+                        <div style={{ fontSize: '10px', marginTop: '2px' }}>
+                          GSTIN: {companies.find(c => c.CompanyId === printData.CompanyId)?.GSTNo}
+                        </div>
+                      )}
+                      {companies.find(c => c.CompanyId === printData.CompanyId)?.State && (
+                        <div style={{ fontSize: '10px' }}>
+                          State: {companies.find(c => c.CompanyId === printData.CompanyId)?.State}
+                          {companies.find(c => c.CompanyId === printData.CompanyId)?.StateCode ? ` (${companies.find(c => c.CompanyId === printData.CompanyId)?.StateCode})` : ''}
+                        </div>
+                      )}
                     </td>
                     <td style={{ width: '50%', border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -376,123 +386,169 @@ const DCList: React.FC = () => {
                               <div style={{ fontWeight: 700 }}>{printData.DCDate}</div>
                             </td>
                           </tr>
+                          <tr>
+                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px' }}>
+                              <div style={{ fontSize: '9px', color: '#666' }}>Vehicle No.</div>
+                              <div style={{ fontWeight: 700 }}>{printData.VehicleNo || '—'}</div>
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </td>
                   </tr>
-                  <tr>
-                    <td colSpan={2} style={{ border: '1px solid black', padding: '4px' }}>
-                      <div style={{ fontSize: '9px', color: '#666' }}>Vehicle Number</div>
-                      <div style={{ fontWeight: 700 }}>
-                        {printData.VehicleNo || '—'}
-                      </div>
-                    </td>
-                  </tr>
                 </tbody>
               </table>
 
-              {/* Items Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginBottom: '8px' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#f5f5f5' }}>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '25px' }}>Sl No</th>
-                    <th style={{ border: '1px solid black', padding: '4px' }}>Description of Goods</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '60px' }}>HSN Code</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Quantity</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '70px', textAlign: 'right' }}>Rate (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '40px' }}>Unit</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '45px', textAlign: 'right' }}>Disc %</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Amount (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '90px', textAlign: 'right' }}>Discount Amt (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Final Amt (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {printData.JsonDCDetails && printData.JsonDCDetails.map((it: DCItem, idx: number) => {
-                    const amount = (Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0);
-                    const discountAmount = (amount * (Number(it.Disc) || 0)) / 100;
-                    const finalAmount = amount - discountAmount;
-                    return (
-                      <tr key={it.productId}>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{idx + 1}</td>
-                        <td style={{ border: '1px solid black', padding: '4px' }}><strong>{it.productName}</strong></td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.hsnCode}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{(Number(it.Qty) || 0).toFixed(3)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{(Number(it.RatePerUnit) || 0).toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.Unit}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.Disc}%</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{amount.toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{discountAmount.toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}><strong>{finalAmount.toFixed(2)}</strong></td>
-                      </tr>
-                    );
-                  })}
-                  <tr style={{ fontWeight: 700 }}>
-                    <td colSpan={3} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Total</td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
-                      {printData.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + (Number(it.Qty) || 0), 0).toFixed(3)}
-                    </td>
-                    <td colSpan={3} style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
-                      {printData.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + ((Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0)), 0).toFixed(2)}
-                    </td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
-                      {printData.JsonDCDetails?.reduce((sum: number, it: DCItem) => sum + (((Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0)) * (Number(it.Disc) || 0) / 100), 0).toFixed(2)}
-                    </td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>₹{printData.TotalAmount?.toFixed(2)}</td>
-                  </tr>
-                </tbody>
-              </table>
+{/* Material Table */}
+<table
+  style={{
+    width: "100%",
+    borderCollapse: "collapse",
+    border: "1px solid black",
+    fontSize: "11px",
+    marginBottom: "8px",
+    marginTop: "8px", 
+  }}
+>
+  <thead>
+    <tr style={{ backgroundColor: "#f5f5f5" }}>
+      <th style={{ border: "1px solid black", padding: "5px" }}>Material</th>
+      <th style={{ border: "1px solid black", padding: "5px", width: "80px" }}>HSN/SAC</th>
+      <th style={{ border: "1px solid black", padding: "5px", width: "70px" }}>Qty (MTs)</th>
+      <th style={{ border: "1px solid black", padding: "5px", width: "80px" }}>Rate (₹)</th>
+      <th style={{ border: "1px solid black", padding: "5px", width: "60px" }}>Disc %</th>
+      <th style={{ border: "1px solid black", padding: "5px", width: "90px" }}>Amount</th>
+      <th style={{ border: "1px solid black", padding: "5px", width: "90px" }}>Total</th>
+    </tr>
+  </thead>
 
-              {/* Totals Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginTop: '-1px' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '6px', width: '60%', border: '1px solid black' }}>
-                      <div>Tax Summary:</div>
-                      {printData.CGST || printData.SGST || printData.IGST ? (
-                        <div>GST @ {((printData.CGST || 0) + (printData.SGST || 0) + (printData.IGST || 0))}% is applicable.</div>
-                      ) : (
-                        <div>No GST Applied (0%)</div>
-                      )}
-                    </td>
-                    <td style={{ padding: '6px', width: '40%', border: '1px solid black' }}>
-                      {(printData.CGST || 0) > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>CGST @ {printData.CGST}%:</span>
-                          <span>₹{((printData.TaxAmount || 0) * (printData.CGST || 0) / 100).toFixed(2)}</span>
-                        </div>
-                      )}
-                      {(printData.SGST || 0) > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>SGST @ {printData.SGST}%:</span>
-                          <span>₹{((printData.TaxAmount || 0) * (printData.SGST || 0) / 100).toFixed(2)}</span>
-                        </div>
-                      )}
-                      {(printData.IGST || 0) > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>IGST @ {printData.IGST}%:</span>
-                          <span>₹{((printData.TaxAmount || 0) * (printData.IGST || 0) / 100).toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, borderTop: '1px solid #ddd', paddingTop: '4px' }}>
-                        <span>TOTAL:</span>
-                        <span>₹{printData.TotalAmount?.toFixed(2)}</span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+  <tbody>
+    {printData.JsonDCDetails?.map((it: DCItem) => {
+      const amount =
+        (Number(it.Qty) || 0) * (Number(it.RatePerUnit) || 0);
+
+      const total =
+        amount - amount * ((Number(it.Disc) || 0) / 100);
+
+      return (
+        <tr key={it.productId}>
+          <td style={{ border: "1px solid black", padding: "5px" }}>
+            {it.productName}
+          </td>
+
+          <td style={{ border: "1px solid black", padding: "5px", textAlign: "center" }}>
+            {it.hsnCode}
+          </td>
+
+          <td style={{ border: "1px solid black", padding: "5px", textAlign: "right" }}>
+            {(Number(it.Qty) || 0).toFixed(3)}
+          </td>
+
+          <td style={{ border: "1px solid black", padding: "5px", textAlign: "right" }}>
+            ₹{(Number(it.RatePerUnit) || 0).toFixed(2)}
+          </td>
+
+          <td style={{ border: "1px solid black", padding: "5px", textAlign: "right" }}>
+            {it.Disc}%
+          </td>
+
+          <td style={{ border: "1px solid black", padding: "5px", textAlign: "right" }}>
+            ₹{amount.toFixed(2)}
+          </td>
+
+          <td style={{ border: "1px solid black", padding: "5px", textAlign: "right", fontWeight: 600 }}>
+            ₹{total.toFixed(2)}
+          </td>
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
+
+{/* Summary Table */}
+<table
+  style={{
+    width: "35%",
+    marginLeft: "auto",
+    borderCollapse: "collapse",
+    border: "1px solid black",
+    fontSize: "11px",
+    marginTop: "8px", 
+  }}
+>
+  <tbody>
+
+    <tr>
+      <td style={{ border: "1px solid black", padding: "6px" }}>
+        Sub Total
+      </td>
+
+      <td style={{ border: "1px solid black", padding: "6px", textAlign: "right" }}>
+        ₹{(printData.TaxAmount || 0).toFixed(2)}
+      </td>
+    </tr>
+
+    {(printData.CGST || 0) > 0 && (
+      <tr>
+        <td style={{ border: "1px solid black", padding: "6px" }}>
+          CGST @ {printData.CGST}%
+        </td>
+
+        <td style={{ border: "1px solid black", padding: "6px", textAlign: "right" }}>
+          ₹{((printData.TaxAmount || 0) * (printData.CGST || 0) / 100).toFixed(2)}
+        </td>
+      </tr>
+    )}
+
+    {(printData.SGST || 0) > 0 && (
+      <tr>
+        <td style={{ border: "1px solid black", padding: "6px" }}>
+          SGST @ {printData.SGST}%
+        </td>
+
+        <td style={{ border: "1px solid black", padding: "6px", textAlign: "right" }}>
+          ₹{((printData.TaxAmount || 0) * (printData.SGST || 0) / 100).toFixed(2)}
+        </td>
+      </tr>
+    )}
+
+    {(printData.IGST || 0) > 0 && (
+      <tr>
+        <td style={{ border: "1px solid black", padding: "6px" }}>
+          IGST @ {printData.IGST}%
+        </td>
+
+        <td style={{ border: "1px solid black", padding: "6px", textAlign: "right" }}>
+          ₹{((printData.TaxAmount || 0) * (printData.IGST || 0) / 100).toFixed(2)}
+        </td>
+      </tr>
+    )}
+
+    <tr style={{ fontWeight: "bold" }}>
+      <td style={{ border: "1px solid black", padding: "6px" }}>
+        Grand Total
+      </td>
+
+      <td style={{ border: "1px solid black", padding: "6px", textAlign: "right" }}>
+        ₹{printData.TotalAmount?.toFixed(2)}
+      </td>
+    </tr>
+
+  </tbody>
+</table>
+
+
+
               {/* Bank Details & Signatory */}
               {(() => {
                 const co = companies.length > 0 ? companies[0] : null;
-                const bankName = co?.BankName || 'THE FEDERAL BANK LIMITED';
-                const bankBranch = co?.BankBranch || 'CHIKKAJALA';
-                const accountNo = co?.AccountNo || '20860200000910';
-                const ifscCode = co?.IFSCCode || 'FDRL0002086';
-                const bankAddress = co?.BankAddress || 'CHIKKAJALA';
+                const bankName = co?.BankName ;
+                const bankBranch = co?.Branch ;
+                const accountNo = co?.AccNo ;
+                const ifscCode = co?.ISFC ;
+                const bankAddress = co?.BankAddress;
                 return (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '10px', marginTop: '-1px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '10px', marginTop: '3px' }}>
                     <tbody>
                       <tr>
                         <td style={{ padding: '6px', width: '60%', border: '1px solid black', verticalAlign: 'top' }}>
@@ -504,7 +560,7 @@ const DCList: React.FC = () => {
                           <div><strong>Bank Address:</strong> {bankAddress}</div>
                         </td>
                         <td style={{ padding: '6px', width: '40%', border: '1px solid black', verticalAlign: 'bottom', textAlign: 'center' }}>
-                          <div style={{ marginBottom: '36px', fontSize: '9px' }}>Certified that the particulars given above are true and correct.</div>
+                          <div style={{ marginBottom: '36px', fontSize: '9px' }}></div>
                           <div style={{ fontWeight: 700, borderTop: '1px solid black', paddingTop: '4px' }}>Authorised Signatory</div>
                         </td>
                       </tr>

@@ -320,13 +320,13 @@ const Invoices: React.FC = () => {
               {/* Header – Dynamic Company Details */}
               {(() => {
                 const co = companies.length > 0 ? companies[0] : null;
-                const coName = co?.Name || 'M/s. SRI MADESHWARA STONE CRUSHER';
-                const coAddress = co?.Address || 'Sy No: 136/4A2, Kakalachinte Village, Mandikal Hobli, Chikkaballapur Taluk, Chikkaballapur - 562104';
-                const coGST = co?.GSTNo || '29ABKFS9495G1Z9';
-                const coState = co?.State || 'KARNATAKA';
-                const coCode = co?.StateCode || '29';
-                const coEmail = co?.Email || 'srimadeshwaragroup@gmail.com';
-                const coPhone = co?.Phone || '';
+                const coName = co?.Name ;
+                const coAddress = co?.Address ;
+                const coGST = co?.GSTNO ;
+                const coState = co?.State;
+                const coCode = co?.StateCode;
+                const coEmail = co?.Email;
+                const coPhone = co?.Phone ;
                 return (
                   <Box sx={{ textAlign: 'center', borderBottom: '2px solid black', pb: 1, mb: 1 }}>
                     <Typography sx={{ fontWeight: 900, fontSize: '16px', color: 'black', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -351,7 +351,7 @@ const Invoices: React.FC = () => {
                 <tbody>
                   <tr>
                     <td style={{ width: '50%', border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 700 }}>Consignee (Ship To):</div>
+                      <div style={{ fontWeight: 700 }}>Buyer (Ship To):</div>
                       <div style={{ fontWeight: 700 }}>{printData.consigneeName}</div>
                       <div>{printData.consigneeAddress}</div>
                       <div>GSTIN: {printData.consigneeGstin || '—'}</div>
@@ -396,6 +396,7 @@ const Invoices: React.FC = () => {
                           <div>{printData.buyerAddress}</div>
                           <div>GSTIN: {printData.buyerGstin || '—'}</div>
                           <div>State: {printData.buyerState} | Code: {printData.buyerStateCode || '—'}</div>
+                          {printData.buyerPhone && <div>Phone: {printData.buyerPhone}</div>}
                         </>
                       )}
                       {printData.urn && <div style={{ fontSize: '10px', marginTop: '4px', color: 'blue', fontWeight: 600 }}>URN: REGISTERED</div>}
@@ -454,14 +455,10 @@ const Invoices: React.FC = () => {
                     <th style={{ border: '1px solid black', padding: '4px', width: '40px' }}>Per</th>
                     <th style={{ border: '1px solid black', padding: '4px', width: '45px', textAlign: 'right' }}>Disc %</th>
                     <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Amount (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '80px', textAlign: 'right' }}>Disc Amt (₹)</th>
-                    <th style={{ border: '1px solid black', padding: '4px', width: '90px', textAlign: 'right' }}>Final Amt (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {printData.items && printData.items.map((it, idx) => {
-                    const discountAmount = (it.amount * it.discountPercentage) / 100;
-                    const finalAmount = it.amount - discountAmount;
                     return (
                       <tr key={it.id}>
                         <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{idx + 1}</td>
@@ -472,76 +469,123 @@ const Invoices: React.FC = () => {
                         <td style={{ border: '1px solid black', padding: '4px', textAlign: 'center' }}>{it.unit}</td>
                         <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.discountPercentage}%</td>
                         <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{it.amount.toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{discountAmount.toFixed(2)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}><strong>{finalAmount.toFixed(2)}</strong></td>
                       </tr>
                     );
                   })}
-                  <tr style={{ fontWeight: 700 }}>
-                    <td colSpan={3} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>Total</td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>
-                      {printData.items?.reduce((s, it) => s + it.quantity, 0).toFixed(3)}
-                    </td>
-                    <td colSpan={3} style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>{printData.subTotal?.toFixed(2)}</td>
-                    <td colSpan={2} style={{ border: '1px solid black', padding: '4px', textAlign: 'right' }}>₹{printData.grandTotal?.toFixed(2)}</td>
-                  </tr>
+    
                 </tbody>
               </table>
 
               {/* Totals Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginTop: '-1px' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '6px', width: '60%', border: '1px solid black' }}>
-                      <div>Tax Summary:</div>
-                      {printData.taxPer && printData.taxPer > 0 ? (
-                        <div>GST Tax @ {printData.taxPer}% is included in total amount.</div>
-                      ) : (
-                        <div>No Tax (0% GST)</div>
-                      )}
-                    </td>
-                    <td style={{ padding: '6px', width: '40%', border: '1px solid black' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                        <span>Sub Total:</span>
-                        <span>₹{printData.subTotal?.toFixed(2)}</span>
-                      </div>
-                      {printData.totalCgst > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>CGST ({printData.cgstPer}%):</span>
-                          <span>₹{printData.totalCgst?.toFixed(2)}</span>
-                        </div>
-                      )}
-                      {printData.totalSgst > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>SGST ({printData.sgstPer}%):</span>
-                          <span>₹{printData.totalSgst?.toFixed(2)}</span>
-                        </div>
-                      )}
-                      {printData.totalIgst > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span>IGST ({printData.igstPer}%):</span>
-                          <span>₹{printData.totalIgst?.toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, borderTop: '1px solid #ddd', paddingTop: '4px' }}>
-                        <span>GRAND TOTAL:</span>
-                        <span>₹{printData.grandTotal?.toFixed(2)}</span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+<table
+  style={{
+    width: "35%",
+    marginLeft: "auto",
+    borderCollapse: "collapse",
+    border: "1px solid black",
+    fontSize: "11px",
+    marginTop: "-1px",
+  }}
+>
+  <tbody>
+    <tr>
+      <td style={{ border: "1px solid black", padding: "6px" }}>
+        Amount
+      </td>
+      <td
+        style={{
+          border: "1px solid black",
+          padding: "6px",
+          textAlign: "right",
+        }}
+      >
+        ₹{printData.subTotal?.toFixed(2)}
+      </td>
+    </tr>
+
+    {printData.totalCgst > 0 && (
+      <tr>
+        <td style={{ border: "1px solid black", padding: "6px" }}>
+          CGST @ {printData.cgstPer}%
+        </td>
+        <td
+          style={{
+            border: "1px solid black",
+            padding: "6px",
+            textAlign: "right",
+          }}
+        >
+          ₹{printData.totalCgst?.toFixed(2)}
+        </td>
+      </tr>
+    )}
+
+    {printData.totalSgst > 0 && (
+      <tr>
+        <td style={{ border: "1px solid black", padding: "6px" }}>
+          SGST @ {printData.sgstPer}%
+        </td>
+        <td
+          style={{
+            border: "1px solid black",
+            padding: "6px",
+            textAlign: "right",
+          }}
+        >
+          ₹{printData.totalSgst?.toFixed(2)}
+        </td>
+      </tr>
+    )}
+
+    {printData.totalIgst > 0 && (
+      <tr>
+        <td style={{ border: "1px solid black", padding: "6px" }}>
+          IGST @ {printData.igstPer}%
+        </td>
+        <td
+          style={{
+            border: "1px solid black",
+            padding: "6px",
+            textAlign: "right",
+          }}
+        >
+          ₹{printData.totalIgst?.toFixed(2)}
+        </td>
+      </tr>
+    )}
+
+    <tr
+      style={{
+        background: "#f5f5f5",
+        fontWeight: 700,
+        fontSize: "12px",
+      }}
+    >
+      <td style={{ border: "1px solid black", padding: "6px" }}>
+        Grand Total
+      </td>
+      <td
+        style={{
+          border: "1px solid black",
+          padding: "6px",
+          textAlign: "right",
+        }}
+      >
+        ₹{printData.grandTotal?.toFixed(2)}
+      </td>
+    </tr>
+  </tbody>
+</table>
               {/* Bank Details & Signatory */}
               {(() => {
                 const co = companies.length > 0 ? companies[0] : null;
-                const bankName = co?.BankName || 'THE FEDERAL BANK LIMITED';
-                const bankBranch = co?.BankBranch || 'CHIKKAJALA';
-                const accountNo = co?.AccountNo || '20860200000910';
-                const ifscCode = co?.IFSCCode || 'FDRL0002086';
-                const bankAddress = co?.BankAddress || 'CHIKKAJALA';
+                const bankName = co?.BankName ;
+                const bankBranch = co?.BankBranch ;
+                const accountNo = co?.AccountNo;
+                const ifscCode = co?.IFSCCode ;
+                const bankAddress = co?.BankAddress ;
                 return (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '10px', marginTop: '-1px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '10px', marginTop: '8px' }}>
                     <tbody>
                       <tr>
                         <td style={{ padding: '6px', width: '60%', border: '1px solid black', verticalAlign: 'top' }}>
@@ -553,7 +597,7 @@ const Invoices: React.FC = () => {
                           <div><strong>Bank Address:</strong> {bankAddress}</div>
                         </td>
                         <td style={{ padding: '6px', width: '40%', border: '1px solid black', verticalAlign: 'bottom', textAlign: 'center' }}>
-                          <div style={{ marginBottom: '36px', fontSize: '9px' }}>Certified that the particulars given above are true and correct.</div>
+                          <div style={{ marginBottom: '36px', fontSize: '9px' }}>   </div>
                           <div style={{ fontWeight: 700, borderTop: '1px solid black', paddingTop: '4px' }}>Authorised Signatory</div>
                         </td>
                       </tr>
