@@ -625,13 +625,6 @@ const DCList: React.FC = () => {
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Typography variant="h4" sx={{ fontWeight: 800, color: '#111827' }}>Delivery Challans</Typography>
-            {!error && dcs.length > 0 && (
-              <Chip 
-                label="📡" 
-                size="small" 
-                sx={{ bgcolor: '#d1fae5', color: '#047857', fontWeight: 600 }}
-              />
-            )}
             {error && dcs.length > 0 && (
               <Chip 
                 label="📋" 
@@ -640,7 +633,6 @@ const DCList: React.FC = () => {
               />
             )}
           </Box>
-          <Typography variant="body2" color="#6b7280">Manage your Delivery Challans and exports</Typography>
         </Box>
         <Button
           id="create-invoice-btn"
@@ -651,10 +643,10 @@ const DCList: React.FC = () => {
             bgcolor: 'primary.main',
             '&:hover': { bgcolor: 'primary.dark' },
             boxShadow: 3,
-            fontWeight: 700,
+            fontWeight: 600,
             px: 3,
             py: 1.2,
-            borderRadius: 2.5
+            borderRadius: 1.5
           }}
         >
           Create DC

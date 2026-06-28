@@ -198,7 +198,6 @@ const Invoices: React.FC = () => {
 
   // Fetch invoices on component mount
   useEffect(() => {
-    console.log('📋 Invoices component mounted, fetching data...');
     dispatch(fetchInvoices());
   }, [dispatch]);
 
@@ -247,7 +246,6 @@ const Invoices: React.FC = () => {
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
-
   const [downloadInvoice, setDownloadInvoice] = useState<Invoice | null>(null);
   const downloadDialogRef = useRef<HTMLDivElement>(null);
 
@@ -316,8 +314,7 @@ const Invoices: React.FC = () => {
 
   
   const renderPrintContent = (printData: Invoice, ref?: React.Ref<HTMLDivElement>) => (
-    <Box ref={ref} sx={{ p: 2, bgcolor: 'white', color: 'black', fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
-              {/* Header – Dynamic Company Details */}
+    <Box ref={ref} sx={{ p: 5, bgcolor: 'white', color: 'black', fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
               {(() => {
                 const co = companies.length > 0 ? companies[0] : null;
                 const coName = co?.Name ;
@@ -347,101 +344,182 @@ const Invoices: React.FC = () => {
               <hr style={{ border: 'none', borderTop: '2px solid black', margin: '4px 0' }} />
               <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '13px', mb: 1, color: 'black' }}>TAX INVOICE</Typography>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', marginBottom: '8px' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ width: '50%', border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 700 }}>Buyer (Ship To):</div>
-                      <div style={{ fontWeight: 700 }}>{printData.consigneeName}</div>
-                      <div>{printData.consigneeAddress}</div>
-                      <div>GSTIN: {printData.consigneeGstin || '—'}</div>
-                      <div>State: {printData.consigneeState} | Code: {printData.consigneeStateCode || '—'}</div>
-                      <div>Phone: {printData.consigneePhone}</div>
-                    </td>
-                    <td style={{ width: '50%', border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px', width: '50%' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Invoice No.</div>
-                              <div style={{ fontWeight: 700 }}>{printData.invoiceNumber}</div>
-                            </td>
-                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Dated</div>
-                              <div style={{ fontWeight: 700 }}>{printData.invoiceDate}</div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Delivery Note</div>
-                              <div>{printData.deliveryNote || '—'}</div>
-                            </td>
-                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Payment Terms</div>
-                              <div>{printData.paymentTerms || '—'}</div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ border: '1px solid black', padding: '6px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 700 }}>Buyer (Bill To):</div>
-                      {printData.sameAsConsignee ? (
-                        <div>Same as Consignee</div>
-                      ) : (
-                        <>
-                          <div style={{ fontWeight: 700 }}>{printData.buyerName}</div>
-                          <div>{printData.buyerAddress}</div>
-                          <div>GSTIN: {printData.buyerGstin || '—'}</div>
-                          <div>State: {printData.buyerState} | Code: {printData.buyerStateCode || '—'}</div>
-                          {printData.buyerPhone && <div>Phone: {printData.buyerPhone}</div>}
-                        </>
-                      )}
-                      {printData.urn && <div style={{ fontSize: '10px', marginTop: '4px', color: 'blue', fontWeight: 600 }}>URN: REGISTERED</div>}
-                    </td>
-                    <td style={{ border: '1px solid black', padding: '0', verticalAlign: 'top' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', padding: '4px', width: '50%' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Buyer Order No.</div>
-                              <div>{printData.buyerOrderNumber || '—'}</div>
-                            </td>
-                            <td style={{ borderBottom: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Buyer Order Date</div>
-                              <div>{printData.buyerOrderDate || '—'}</div>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style={{ borderRight: '1px solid black', padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Dispatched Through</div>
-                              <div>{printData.dispatchedThrough || '—'}</div>
-                            </td>
-                            <td style={{ padding: '4px' }}>
-                              <div style={{ fontSize: '9px', color: '#666' }}>Destination</div>
-                              <div>{printData.destination || '—'}</div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ border: '1px solid black', padding: '4px' }}>
-                      <div style={{ fontSize: '9px', color: '#666' }}>Vehicle Number</div>
-                      <div style={{ fontWeight: 700 }}>
-                        {printData.vehicleNumber || '—'}
-                      </div>
-                    </td>
-                    <td style={{ border: '1px solid black', padding: '4px' }}>
-                      <div style={{ fontSize: '9px', color: '#666' }}>Terms of Delivery</div>
-                      <div>{printData.termsOfDelivery || '—'}</div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <table
+  style={{
+    width: "100%",
+    borderCollapse: "collapse",
+    border: "1px solid black",
+    marginBottom: "8px",
+    fontSize: "11px",
+  }}
+>
+  <tbody>
+    <tr>
+      {/* Buyer Details */}
+      <td
+        style={{
+          width: "50%",
+          border: "1px solid black",
+          padding: "6px",
+          verticalAlign: "top",
+        }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: "6px" }}>
+          Buyer (Bill To)
+        </div>
+
+        <div>
+          <strong>{printData.buyerName}</strong>
+        </div>
+
+        <div style={{ marginTop: "3px" }}>
+          <strong>Phone :</strong> {printData.buyerPhone || "—"}
+        </div>
+
+        <div>
+          <strong>GSTIN / URP :</strong>{" "}
+          {printData.buyerGstin || "URP"}
+        </div>
+
+        <div>
+          <strong>State :</strong> {printData.buyerState} (
+          {printData.buyerStateCode || "--"})
+        </div>
+
+        <div style={{ marginTop: "4px", lineHeight: "16px" }}>
+          <strong>Address :</strong>
+          <br />
+          {printData.buyerAddress}
+        </div>
+      </td>
+
+      {/* Invoice Details */}
+      <td
+        style={{
+          width: "50%",
+          border: "1px solid black",
+          padding: "0",
+          verticalAlign: "top",
+        }}
+      >
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+          }}
+        >
+          <tbody>
+            <tr>
+              <td
+                style={{
+                  width: "45%",
+                  border: "1px solid black",
+                  padding: "6px",
+                  fontWeight: 600,
+                }}
+              >
+                Invoice No.
+              </td>
+
+              <td
+                style={{
+                  border: "1px solid black",
+                  padding: "6px",
+                }}
+              >
+                {printData.invoiceNumber}
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style={{
+                  border: "1px solid black",
+                  padding: "6px",
+                  fontWeight: 600,
+                }}
+              >
+                Invoice Date
+              </td>
+
+              <td
+                style={{
+                  border: "1px solid black",
+                  padding: "6px",
+                }}
+              >
+                {printData.invoiceDate}
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style={{
+                  border: "1px solid black",
+                  padding: "6px",
+                  fontWeight: 600,
+                }}
+              >
+                Vehicle No.
+              </td>
+
+              <td
+                style={{
+                  border: "1px solid black",
+                  padding: "6px",
+                }}
+              >
+                {printData.vehicleNumber || "—"}
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style={{
+                  border: "1px solid black",
+                  padding: "6px",
+                  fontWeight: 600,
+                }}
+              >
+                Destination
+              </td>
+
+              <td
+                style={{
+                  border: "1px solid black",
+                  padding: "6px",
+                }}
+              >
+                {printData.destination || "—"}
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style={{
+                  border: "1px solid black",
+                  padding: "6px",
+                  fontWeight: 600,
+                }}
+              >
+                Dispatch Through
+              </td>
+
+              <td
+                style={{
+                  border: "1px solid black",
+                  padding: "6px",
+                }}
+              >
+                {printData.dispatchedThrough || "—"}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
               {/* Items Table */}
               <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black', fontSize: '11px', marginBottom: '8px' }}>
@@ -634,22 +712,7 @@ const Invoices: React.FC = () => {
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Typography variant="h4" sx={{ fontWeight: 800 }} color="#111827">Invoices</Typography>
-            {!error && invoices.length > 0 && (
-              <Chip 
-                label="📡" 
-                size="small" 
-                sx={{ bgcolor: '#d1fae5', color: '#047857', fontWeight: 600 }}
-              />
-            )}
-            {error && invoices.length > 0 && (
-              <Chip 
-                label="📋" 
-                size="small" 
-                sx={{ bgcolor: '#fef3c7', color: '#d97706', fontWeight: 600 }}
-              />
-            )}
           </Box>
-          <Typography variant="body2" color="#6b7280">Manage your GST invoices and exports</Typography>
         </Box>
         <Button
           id="create-invoice-btn"

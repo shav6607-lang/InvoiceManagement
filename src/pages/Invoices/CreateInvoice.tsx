@@ -363,47 +363,6 @@ const CreateInvoice: React.FC = () => {
         const message = responseData?.Message || responseData?.message || text || 'Failed to submit invoice.';
         throw new Error(message);
       }
-      // dispatch(addInvoice({
-      //   id: uuidv4(),
-      //   invoiceNumber: data.invoiceNumber,
-      //   invoiceDate: data.invoiceDate,
-      //   consigneeName: '',
-      //   consigneeAddress: '',
-      //   consigneeGstin: '',
-      //   consigneePhone: '',
-      //   consigneeState: '',
-      //   consigneeStateCode: '',
-      //   sameAsConsignee: false,
-      //   buyerName: data.buyerName,
-      //   buyerAddress: data.buyerAddress,
-      //   buyerGstin: data.buyerGstNo,
-      //   buyerPhone: data.buyerPhone,
-      //   buyerState: data.buyerState,
-      //   buyerStateCode: data.buyerStateCode,
-      //   deliveryNote: '',
-      //   paymentTerms: '',
-      //   buyerOrderNumber: '',
-      //   buyerOrderDate: '',
-      //   dispatchDocumentNumber: '',
-      //   dispatchNoteDate: '',
-      //   dispatchedThrough: data.dispatchedThrough,
-      //   destination: data.destination,
-      //   vehicleNumber: data.vehicleNo,
-      //   lrRrNumber: '',
-      //   termsOfDelivery: '',
-      //   urn: data.urn,
-      //   weightmentNo: '',
-      //   cgstPer,
-      //   sgstPer,
-      //   igstPer,
-      //   taxPer: taxRate,
-      //   items,
-      //   subTotal,
-      //   totalCgst,
-      //   totalSgst,
-      //   totalIgst,
-      //   grandTotal,
-      // }));
       setSaveSuccess(true);
       setTimeout(() => navigate('/invoices'), 1200);
     } catch (error: any) {
@@ -641,6 +600,36 @@ const CreateInvoice: React.FC = () => {
         gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' } 
       }}
     >
+          <Controller name="vehicleNo" control={control} rules={{ required: "Vehicle number required",
+    pattern: {
+      value: /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/i,
+      message: "Enter a valid vehicle number"
+    }
+  }}
+  render={({ field, fieldState: { error } }) => (
+    <TextField
+      {...field}
+      label="Vehicle No"
+      fullWidth
+      size="small"
+      error={!!error}
+      helperText={error?.message}
+      slotProps={{
+        htmlInput: {
+          style: {
+            fontSize: "0.825rem",
+            padding: "7.5px 10px"
+          }
+        },
+        inputLabel: {
+          style: {
+            fontSize: "0.825rem"
+          }
+        }
+      }}
+    />
+  )}
+/>
       <Controller name="buyerName" control={control} render={({ field }) => (
         <TextField {...field} label="Buyer Name" fullWidth size="small" slotProps={{ htmlInput: { style: { fontSize: '0.825rem', padding: '7.5px 10px' } }, inputLabel: { style: { fontSize: '0.825rem' } } }} />
       )} />
@@ -687,40 +676,7 @@ const CreateInvoice: React.FC = () => {
         <TextField {...field} label="Destination" fullWidth size="small" slotProps={{ htmlInput: { style: { fontSize: '0.825rem', padding: '7.5px 10px' } }, inputLabel: { style: { fontSize: '0.825rem' } } }} />
       )} />
       
-      <Controller
-  name="vehicleNo"
-  control={control}
-  rules={{
-    required: "Vehicle number required",
-    pattern: {
-      value: /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/i,
-      message: "Enter a valid vehicle number"
-    }
-  }}
-  render={({ field, fieldState: { error } }) => (
-    <TextField
-      {...field}
-      label="Vehicle No"
-      fullWidth
-      size="small"
-      error={!!error}
-      helperText={error?.message}
-      slotProps={{
-        htmlInput: {
-          style: {
-            fontSize: "0.825rem",
-            padding: "7.5px 10px"
-          }
-        },
-        inputLabel: {
-          style: {
-            fontSize: "0.825rem"
-          }
-        }
-      }}
-    />
-  )}
-/>
+  
 
       {/* Checkbox item styled cleanly to fit the grid without awkward line wraps */}
       <Controller name="urn" control={control} render={({ field }) => (
