@@ -14,22 +14,12 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { deleteDC, fetchDCs, type DC } from '../../redux/slices/dcSlice';
+import { deleteDC, fetchDCs, type DC, type DCItem } from '../../redux/slices/dcSlice';
+import type { CompanyInfo } from '@/types/company.types';
+import { materialApi } from '@/services/api';
+import { useAuthenticatedEffect } from '@/hooks/useAuthenticatedEffect';
 import { useReactToPrint } from 'react-to-print';
 import html2pdf from 'html2pdf.js';
-
-// Type definition for DC Line Items
-interface DCItem {
-  productId: string;
-  productName: string;
-  hsnCode: string;
-  Qty: number;
-  RatePerUnit: number;
-  Unit: string;
-  Disc: number;
-  TaxableAmount: number;
-  Total: number;
-}
 
 // ─── Collapsible Row Sub-Component ──────────────────────────────────────────
 interface RowProps {
@@ -162,38 +152,26 @@ const DCList: React.FC = () => {
   const [filterFromDate, setFilterFromDate] = useState('');
   const [filterToDate, setFilterToDate] = useState('');
 
-  const { token } = useAppSelector((state) => state.auth);
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
   const [companies, setCompanies] = useState<CompanyInfo[]>([]);
 
-  // Fetch company details from API
-  useEffect(() => {
-    const fetchCompanies = async () => {
+  useAuthenticatedEffect(() => {
+    const loadCompanies = async () => {
       try {
-        const headers: HeadersInit = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch(`${API_BASE}/Material/GetCompanies`, { headers });
-        const json = await res.json();
+        const json = await materialApi.getCompanies();
         if (Array.isArray(json?.Data)) {
           setCompanies(json.Data);
         }
-      } catch (e) {
-        console.error('Failed to fetch companies:', e);
+      } catch {
+        // Company details are optional for list view
       }
     };
-    fetchCompanies();
-  }, [token, API_BASE]);
+    loadCompanies();
+  });
 
-  // Fetch DCs on component mount
-  useEffect(() => {
-    console.log('📋 DC List component mounted, fetching data...');
-    console.log('🔍 Current Redux state:', { dcs, loading, error });
-    dispatch(fetchDCs()).then(() => {
-      console.log('✅ fetchDCs action completed');
-    }).catch((err) => {
-      console.error('❌ fetchDCs action failed:', err);
-    });
-  }, [dispatch]);
+  useAuthenticatedEffect(() => {
+    dispatch(fetchDCs());
+  });
 
   React.useEffect(() => {
     const today = new Date();
@@ -231,10 +209,10 @@ const DCList: React.FC = () => {
       const element = downloadDialogRef.current;
       const opt = {
         margin:       0.5,
-        filename:     `DC_${downloadDC.DCNo || downloadDC.id}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
+        filename:     `DC_${downloadDC.DCNo}.pdf`,
+        image:        { type: 'jpeg' as const, quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' as const }
       };
       
       setTimeout(() => {
@@ -296,27 +274,6 @@ const DCList: React.FC = () => {
     return true;
   });
 
-  console.log('📊 Redux dcs state:', dcs);
-  console.log('📊 Redux loading state:', loading);
-  console.log('📊 Redux error state:', error);
-  
-  // Debug filtering
-  console.log('🔍 [Filter] Input dcs.length:', dcs.length);
-  dcs.forEach((dc, idx) => {
-    const dcDateParts = dc.DCDate.split('/');
-    let normalizedDCDate = dc.DCDate;
-    if (dcDateParts.length === 3 && dcDateParts[0].length === 2) {
-      const [day, month, year] = dcDateParts;
-      normalizedDCDate = `${year}-${month}-${day}`;
-    }
-    console.log(`🔍 [Filter] DC ${idx}: Original="${dc.DCDate}" Normalized="${normalizedDCDate}" FilterFrom="${filterFromDate}" FilterTo="${filterToDate}"`);
-    console.log(`🔍 [Filter] DC ${idx}: Pass date filter? (${normalizedDCDate} >= ${filterFromDate} && ${normalizedDCDate} <= ${filterToDate})`);
-  });
-  
-  console.log('📊 Filtered DCs:', filteredDCs);
-  console.log('📊 Filter params - search:', filterSearch, 'from:', filterFromDate, 'to:', filterToDate);
-
-  
   const renderPrintContent = (printData: DC, ref?: React.Ref<HTMLDivElement>) => (
     <Box ref={ref} sx={{ p: 2, bgcolor: 'white', color: 'black', fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
               {(() => {
@@ -786,27 +743,16 @@ const DCList: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {(() => {
-                const sliceData = filteredDCs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-                console.log('📋 [TableBody] About to render rows');
-                console.log('📋 [TableBody] dcs.length:', dcs.length);
-                console.log('📋 [TableBody] filteredDCs.length:', filteredDCs.length);
-                console.log('📋 [TableBody] sliceData.length:', sliceData.length);
-                console.log('📋 [TableBody] sliceData:', sliceData);
-                console.log('📋 [TableBody] page:', page, 'rowsPerPage:', rowsPerPage);
-                
-                return sliceData.map((row, idx) => {
-                  console.log(`🎨 [Mapping] Row ${idx}:`, row);
-                  return (
-                    <Row
-                      key={row.SlNo || idx}
-                      row={row}
-                      onView={(dc) => setViewDC(dc)}
-                      onDownload={(dc) => { setDownloadDC(dc); }}
-                    />
-                  );
-                });
-              })()}
+              {filteredDCs
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((row, idx) => (
+                  <Row
+                    key={row.SlNo || idx}
+                    row={row}
+                    onView={(dc) => setViewDC(dc)}
+                    onDownload={(dc) => { setDownloadDC(dc); }}
+                  />
+                ))}
               {filteredDCs.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={15} align="center" sx={{ py: 8 }}>

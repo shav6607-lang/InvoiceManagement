@@ -15,9 +15,12 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { setCredentials } from '../../redux/slices/authSlice';
-import { invoiceAPI } from '../../services/api';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
+import { setCredentials } from '@/redux/slices/authSlice';
+import { authApi } from '@/services/api';
+import { extractAccessToken, extractUserDetails, mapLoginUser } from '@/utils/auth';
+import { getErrorMessage } from '@/utils/errors';
+import { ROUTES } from '@/constants';
 import { keyframes } from '@mui/system';
 
 const loginSchema = z.object({
@@ -37,7 +40,7 @@ const Login: React.FC = () => {
 
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate('/', { replace: true });
+      navigate(ROUTES.DASHBOARD, { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -51,46 +54,21 @@ const Login: React.FC = () => {
     setError(null);
 
     try {
-      const response = await invoiceAPI.login(data.username, data.password);
-      const respData = response || {};
-      const accessToken: string =
-        respData.access_token ??
-        respData.accessToken ??
-        respData.token ??
-        respData.data?.access_token ??
-        respData.data?.token ??
-        '';
-      const userDetails =
-        respData.userDetails ?? respData.user ?? respData.data?.userDetails ?? respData.data?.user;
+      const response = await authApi.login(data.username, data.password);
+      const accessToken = extractAccessToken(response);
+      const userDetails = extractUserDetails(response);
 
-      // ✅ Only allow dashboard if a real non-empty token is returned
-      if (accessToken && accessToken.trim() !== '') {
+      if (accessToken.trim() !== '') {
         dispatch(setCredentials({
-          user: {
-            id: String(userDetails?.UserId ?? ''),
-            name: userDetails?.DisplayName ?? userDetails?.UserName ?? data.username,
-            email: '',
-            role: userDetails?.RoleName ?? 'user',
-            UserId: userDetails?.UserId,
-            UserName: userDetails?.UserName,
-            RoleId: userDetails?.RoleId,
-            RoleName: userDetails?.RoleName,
-            DisplayName: userDetails?.DisplayName,
-            CompanyName: userDetails?.CompanyName,
-          },
+          user: mapLoginUser(userDetails, data.username),
           token: accessToken,
         }));
-        navigate('/');
+        navigate(ROUTES.DASHBOARD);
       } else {
-        // ❌ API returned 200 but access_token is empty → invalid credentials
-        setError(respData.Message || respData.message || 'Invalid username or password.');
+        setError(response.Message ?? response.message ?? 'Invalid username or password.');
       }
-    } catch (err: any) {
-      const serverMessage =
-        err?.response?.data?.Message ||
-        err?.response?.data?.message ||
-        err?.message;
-      setError(serverMessage || 'Login failed. Please check server or network.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Login failed. Please check server or network.'));
     } finally {
       setLoading(false);
     }

@@ -1,152 +1,82 @@
-import axios from 'axios';
+import { API_ENDPOINTS } from '@/constants';
+import type { LoginResponse } from '@/types/api.types';
+import axiosInstance from './apiClient';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ;
-
-// Disable SSL certificate verification for development
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  httpsAgent: {
-    rejectUnauthorized: false,
+export const authApi = {
+  login: async (username: string, password: string): Promise<LoginResponse> => {
+    const response = await axiosInstance.post<LoginResponse>(API_ENDPOINTS.LOGIN, {
+      Username: username,
+      Password: password,
+    });
+    return response.data;
   },
-});
+};
 
-// Add request interceptor to include authorization token
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    console.log('📤 Sending request to:', config.url);
-    console.log('🔐 Token:', token ? '✓ Present' : '✗ Missing');
-    if (token) {
-      config.headers = config.headers || {};
-      const bearerToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-      config.headers.Authorization = bearerToken;
-      config.headers['X-Auth-Token'] = token;
-      console.log('✓ Authorization headers set');
-      console.log('🔐 Authorization header:', config.headers.Authorization);
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor
-axiosInstance.interceptors.response.use(
-  (response) => {
-    console.log('📥 API Response Status:', response.status);
-    console.log('📥 API Response Data:', response.data);
-    return response;
-  },
-  (error) => {
-    console.error('❌ API Error Status:', error.response?.status);
-    console.error('❌ API Error Message:', error.response?.data || error.message);
-    return Promise.reject(error);
-  }
-);
-
-export const invoiceAPI = {
-  login: async (username: string, password: string) => {
-    try {
-      console.log('🔐 Attempting login...');
-      const response = await axiosInstance.post('/Login', {
-        Username: username,
-        Password: password,
-      });
-      console.log('✅ Login successful');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Login error:', error);
-      throw error;
-    }
-  },
-  
-  getInvoiceList: async () => {
-    try {
-      console.log('🌐 Making API call to /Invoice/GetInvoiceList');
-      const response = await axiosInstance.get('/Invoice/GetInvoiceList');
-      console.log('✅ Successfully fetched invoices from API');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error fetching invoice list:', error);
-      throw error;
-    }
+export const invoiceApi = {
+  getList: async () => {
+    const response = await axiosInstance.get(API_ENDPOINTS.INVOICE_LIST);
+    return response.data;
   },
 
+  add: async (payload: Record<string, unknown>) => {
+    const response = await axiosInstance.post(API_ENDPOINTS.INVOICE_ADD, payload);
+    return response.data;
+  },
+};
+
+export const dcApi = {
+  getList: async () => {
+    const response = await axiosInstance.get(API_ENDPOINTS.DC_LIST);
+    return response.data;
+  },
+
+  add: async (payload: Record<string, unknown>) => {
+    const response = await axiosInstance.post(API_ENDPOINTS.DC_ADD, payload);
+    return response.data;
+  },
+
+  delete: async (id: number) => {
+    const response = await axiosInstance.delete(API_ENDPOINTS.DC_DELETE(id));
+    return response.data;
+  },
+};
+
+export interface MaterialListParams {
+  companyId?: number;
+  materialType?: number;
+}
+
+export const materialApi = {
   getCompanies: async () => {
-    try {
-      console.log('🏢 Fetching companies...');
-      const response = await axiosInstance.get('/Material/GetCompanies');
-      console.log('✅ Successfully fetched companies');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error fetching companies:', error);
-      throw error;
-    }
+    const response = await axiosInstance.get(API_ENDPOINTS.COMPANIES);
+    return response.data;
   },
 
-  getMaterials: async () => {
-    try {
-      console.log('📦 Fetching materials...');
-      const response = await axiosInstance.get('/Material/GetList');
-      console.log('✅ Successfully fetched materials');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error fetching materials:', error);
-      throw error;
-    }
+  getList: async (params?: MaterialListParams) => {
+    const response = await axiosInstance.get(API_ENDPOINTS.MATERIALS, { params });
+    return response.data;
   },
 
-  addInvoice: async (payload: any) => {
-    try {
-      console.log('💾 Submitting invoice...');
-      const response = await axiosInstance.post('/Invoice/AddInvoice', payload);
-      console.log('✅ Invoice submitted successfully');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error submitting invoice:', error);
-      throw error;
-    }
+  addMaterial: async (payload: Record<string, unknown>) => {
+    const response = await axiosInstance.post(API_ENDPOINTS.MATERIAL_ADD, payload);
+    return response.data;
   },
 };
 
+/** @deprecated Use named exports: authApi, invoiceApi, dcApi, materialApi */
+export const invoiceAPI = {
+  login: authApi.login,
+  getInvoiceList: invoiceApi.getList,
+  getCompanies: materialApi.getCompanies,
+  getMaterials: materialApi.getList,
+  addInvoice: invoiceApi.add,
+};
+
+/** @deprecated Use dcApi instead */
 export const DCAPI = {
-  GetDCList: async () => {
-    try {
-      console.log('🌐 Making API call to /DC/GetDCList');
-      const response = await axiosInstance.get('/DC/GetDCList');
-      console.log('✅ Successfully fetched DC list');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error fetching DC list:', error);
-      throw error;
-    }
-  },
-
-  AddDC: async (payload: any) => {
-    try {
-      console.log('💾 Submitting DC...');
-      const response = await axiosInstance.post('/DC/AddDC', payload);
-      console.log('✅ DC submitted successfully');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error submitting DC:', error);
-      throw error;
-    }
-  },
-
-  DeleteDC: async (id: number) => {
-    try {
-      console.log('🗑️ Deleting DC with ID:', id);
-      const response = await axiosInstance.delete(`/DC/DeleteDC/${id}`);
-      console.log('✅ DC deleted successfully');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error deleting DC:', error);
-      throw error;
-    }
-  },
+  GetDCList: dcApi.getList,
+  AddDC: dcApi.add,
+  DeleteDC: dcApi.delete,
 };
 
-export default axiosInstance;
+export { default as axiosInstance } from './apiClient';

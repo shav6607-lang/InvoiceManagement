@@ -1,8 +1,7 @@
 import React from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { Outlet } from 'react-router-dom';
-import { lightTheme } from '../theme';
-import velBg from '../assets/vel_background.png';
+import { lightTheme } from '@/theme';
 
 export const AuthLayout: React.FC = () => {
   return (
@@ -56,7 +55,10 @@ export const AuthLayout: React.FC = () => {
           position: fixed;
           inset: -15%;
           z-index: 0;
-          background-image: url('${velBg}');
+          background:
+            radial-gradient(circle at 20% 20%, rgba(245, 158, 11, 0.25), transparent 45%),
+            radial-gradient(circle at 80% 70%, rgba(239, 68, 68, 0.2), transparent 40%),
+            linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
           background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;

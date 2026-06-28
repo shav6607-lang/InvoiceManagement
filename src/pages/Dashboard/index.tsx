@@ -1,6 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppSelector } from '../../redux/hooks';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
+import { fetchInvoices } from '@/redux/slices/invoiceSlice';
+import { fetchDCs } from '@/redux/slices/dcSlice';
+import { useAuthenticatedEffect } from '@/hooks/useAuthenticatedEffect';
+import { ROUTES } from '@/constants';
 import {
   AreaChart,
   Area,
@@ -22,8 +26,14 @@ const monthlyData = [
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const { invoices } = useAppSelector((state) => state.invoices);
-  const { dcs } = useAppSelector((state) => state.dcs);
+  const { data: dcs } = useAppSelector((state) => state.dcs);
+
+  useAuthenticatedEffect(() => {
+    dispatch(fetchInvoices());
+    dispatch(fetchDCs());
+  });
 
   return (
     <div className="dash-root">
@@ -57,7 +67,7 @@ const Dashboard: React.FC = () => {
         <div className="dash-count-card dash-green">
           <div className="dash-count-body">
             <span className="dash-count-label">Total DC</span>
-            <span className="dash-count-value">{0}</span>
+            <span className="dash-count-value">{dcs.length}</span>
             <span className="dash-count-sub">Delivery challans issued</span>
           </div>
           <div className="dash-count-icon">
@@ -73,10 +83,10 @@ const Dashboard: React.FC = () => {
         {/* Create Invoice */}
         <div
           className="dash-action-card dash-action-blue"
-          onClick={() => navigate('/invoices/create')}
+          onClick={() => navigate(ROUTES.INVOICES_CREATE)}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && navigate('/invoices/create')}
+          onKeyDown={(e) => e.key === 'Enter' && navigate(ROUTES.INVOICES_CREATE)}
         >
           <div className="dash-action-icon-wrap dash-action-icon-blue">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -92,10 +102,10 @@ const Dashboard: React.FC = () => {
         {/* Create DC */}
         <div
           className="dash-action-card dash-action-green"
-          onClick={() => navigate('/dc/create')}
+          onClick={() => navigate(ROUTES.DC_CREATE)}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && navigate('/dc/create')}
+          onKeyDown={(e) => e.key === 'Enter' && navigate(ROUTES.DC_CREATE)}
         >
           <div className="dash-action-icon-wrap dash-action-icon-green">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box, Typography, Button, Card,
   IconButton, TextField, Dialog, DialogTitle,
@@ -16,9 +16,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAppSelector } from '../../redux/hooks';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-const API_BASE = import.meta.env.VITE_API_BASE_URL ;
+import { materialApi } from '@/services/api';
+import { useAuthenticatedEffect } from '@/hooks/useAuthenticatedEffect';
+import { getErrorMessage } from '@/utils/errors';
 
 const MATERIAL_TYPES = [
   { value: 1, label: 'Invoice' },
@@ -59,7 +59,7 @@ const materialTypeName = (type: number) =>
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const Materials: React.FC = () => {
-  const { token, user } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state) => state.auth);
 
   // ── List state ──
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -92,23 +92,14 @@ const Materials: React.FC = () => {
   });
 
   // ── Auth headers ──
-  const authHeaders = (): HeadersInit => ({
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  });
-
-  // ── Fetch data ──
   const fetchData = async () => {
     setListLoading(true);
     setListError(null);
     try {
-      const [companyRes, materialRes] = await Promise.all([
-        fetch(`${API_BASE}/Material/GetCompanies`, { headers: authHeaders() }),
-        fetch(`${API_BASE}/Material/GetList`, { headers: authHeaders() }),
+      const [companyJson, materialJson] = await Promise.all([
+        materialApi.getCompanies(),
+        materialApi.getList(),
       ]);
-
-      const companyJson = await companyRes.json();
-      const materialJson = await materialRes.json();
 
       if (Array.isArray(companyJson?.Data)) setCompanies(companyJson.Data);
       if (Array.isArray(materialJson?.Data)) setMaterials(materialJson.Data);
@@ -119,10 +110,9 @@ const Materials: React.FC = () => {
     }
   };
 
-  useEffect(() => {
+  useAuthenticatedEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  });
 
   // ── Open Add Dialog ──
   const openAdd = () => {
@@ -161,17 +151,7 @@ const Materials: React.FC = () => {
         UserId: user?.UserId ?? 0,
       };
 
-      const res = await fetch(`${API_BASE}/Material/AddMaterial`, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        throw new Error(json?.Message || json?.message || 'Save failed');
-      }
+      await materialApi.addMaterial(payload);
 
       setDialogOpen(false);
       setSnackbar({
@@ -182,8 +162,8 @@ const Materials: React.FC = () => {
         severity: 'success',
       });
       await fetchData(); // Refresh list
-    } catch (err: any) {
-      setSaveError(err?.message || 'An error occurred while saving.');
+    } catch (err: unknown) {
+      setSaveError(getErrorMessage(err, 'An error occurred while saving.'));
     } finally {
       setSaving(false);
     }

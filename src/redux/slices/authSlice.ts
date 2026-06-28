@@ -1,11 +1,11 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { storage } from '@/utils/storage';
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: string;
-  // Fields from API userDetails
   UserId?: number;
   UserName?: string;
   RoleId?: number;
@@ -20,34 +20,16 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-const getInitialUser = (): User | null => {
-  const storedUser = localStorage.getItem('user');
-  if (!storedUser) return null;
-  try {
-    return JSON.parse(storedUser);
-  } catch {
-    return null;
-  }
-};
+const initialToken = storage.getToken();
 
-// Validate token: must exist and be non-empty
-const getInitialToken = (): string | null => {
-  const t = localStorage.getItem('token');
-  return t && t.trim() !== '' ? t : null;
-};
-
-const initialToken = getInitialToken();
-
-// If no valid token found on load, clear any stale user data
 if (!initialToken) {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
+  storage.clearAuth();
 }
 
 const initialState: AuthState = {
-  user: initialToken ? getInitialUser() : null,
+  user: initialToken ? storage.getUser<User>() : null,
   token: initialToken,
-  isAuthenticated: !!initialToken,
+  isAuthenticated: Boolean(initialToken),
 };
 
 const authSlice = createSlice({
@@ -56,20 +38,19 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (
       state,
-      action: PayloadAction<{ user: User; token: string }>
+      action: PayloadAction<{ user: User; token: string }>,
     ) => {
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.isAuthenticated = true;
-      localStorage.setItem('token', action.payload.token);
-      localStorage.setItem('user', JSON.stringify(action.payload.user));
+      storage.setToken(action.payload.token);
+      storage.setUser(action.payload.user);
     },
     logout: (state) => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      storage.clearAuth();
     },
   },
 });

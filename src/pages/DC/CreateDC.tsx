@@ -22,9 +22,10 @@ import {
 import { Add, Delete, ArrowBack } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+import { dcApi, materialApi } from '@/services/api';
+import { useAuthenticatedEffect } from '@/hooks/useAuthenticatedEffect';
+import { getErrorMessage } from '@/utils/errors';
 import { v4 as uuidv4 } from 'uuid';
-
 
 type Company = {
   CompanyId: number;
@@ -63,7 +64,6 @@ export interface DCItem {
   total: number;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ;
 const genDCNo = () =>
   `DC/${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(2)}/${String(
     Math.floor(Math.random() * 9000 + 1000),
@@ -94,8 +94,6 @@ type FormData = {
 
 const CreateDC: React.FC = () => {
   const navigate = useNavigate();
-  //const dispatch = useAppDispatch();
-  const { token } = useAppSelector((state) => state.auth);
 
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companyHsnCode, setCompanyHsnCode] = useState<string>('');
@@ -118,20 +116,15 @@ const CreateDC: React.FC = () => {
     },
   });
 
-  useEffect(() => {
-    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
-    
-    fetch(`${API_BASE}/Material/GetCompanies`, { headers })
-      .then((r) => r.json())
+  useAuthenticatedEffect(() => {
+    materialApi.getCompanies()
       .then((data) => {
         if (Array.isArray(data?.Data) && data.Data.length > 0) {
           const company = data.Data[0];
           setSelectedCompany(company);
-          // Store and set DCNum from company
           if (company.DCNum) {
             setValue('dcNumber', company.DCNum);
           }
-          // Store HSNCode from company
           if (company.HSNCode) {
             setCompanyHsnCode(company.HSNCode);
           }
@@ -141,8 +134,7 @@ const CreateDC: React.FC = () => {
         setSelectedCompany(null);
       });
 
-    fetch(`${API_BASE}/Material/GetList?companyId=1&materialType=2`, { headers })
-      .then((r) => r.json())
+    materialApi.getList({ companyId: 1, materialType: 2 })
       .then((data) => {
         if (Array.isArray(data?.Data)) {
           setMaterials(data.Data);
@@ -151,7 +143,7 @@ const CreateDC: React.FC = () => {
       .catch(() => {
         setMaterials([]);
       });
-  }, [token, setValue]);
+  }, [setValue]);
 
   const recalcItem = useCallback((item: DCItem, tax: 'none' | '5' | '18', zeroRate: number, cgstSgstRateVal: number, igstRateVal: number): DCItem => {
     const amount = item.quantity * item.rate;
@@ -288,31 +280,13 @@ const CreateDC: React.FC = () => {
     };
 
     try {
-      const response = await fetch(`${API_BASE}/DC/AddDC`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-      const text = await response.text();
-      let responseData = null;
-      try {
-        responseData = text ? JSON.parse(text) : null;
-      } catch {
-        // ignore
-      }
-      if (!response.ok) {
-        const message = responseData?.Message || responseData?.message || text || 'Failed to submit delivery challan.';
-        throw new Error(message);
-      }
+      await dcApi.add(payload);
       setSaveSuccess(true);
       setTimeout(() => navigate('/dc'), 1200);
-    } catch (error: any) {
-      setApiError(error?.message || 'Unable to submit delivery challan.');
+    } catch (error: unknown) {
+      setApiError(getErrorMessage(error, 'Unable to submit delivery challan.'));
     } finally {
-      // setSaving(false);
+      setSaving(false);
     }
   });
 

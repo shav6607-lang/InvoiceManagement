@@ -16,6 +16,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { deleteInvoice, fetchInvoices, type Invoice } from '../../redux/slices/invoiceSlice';
+import type { CompanyInfo } from '@/types/company.types';
+import { materialApi } from '@/services/api';
+import { useAuthenticatedEffect } from '@/hooks/useAuthenticatedEffect';
 import { format } from 'date-fns';
 import { useReactToPrint } from 'react-to-print';
 import html2pdf from 'html2pdf.js';
@@ -160,30 +163,10 @@ const Row: React.FC<RowProps> = ({ row, onView, onDownload }) => {
   );
 };
 
-// ─── Company Info Interface ─────────────────────────────────────────────────
-interface CompanyInfo {
-  CompanyId: number;
-  Name: string;
-  Address?: string;
-  GSTNo?: string;
-  State?: string;
-  StateCode?: string;
-  Email?: string;
-  Phone?: string;
-  BankName?: string;
-  BankBranch?: string;
-  AccountNo?: string;
-  IFSCCode?: string;
-  BankAddress?: string;
-}
-
-// ─── Main Invoices Component ────────────────────────────────────────────────
 const Invoices: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { invoices, loading, error } = useAppSelector((state) => state.invoices);
-  const { token } = useAppSelector((state) => state.auth);
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // States
   const [searchQuery, setSearchQuery] = useState('');
@@ -196,28 +179,23 @@ const Invoices: React.FC = () => {
   const [filterFromDate, setFilterFromDate] = useState('');
   const [filterToDate, setFilterToDate] = useState('');
 
-  // Fetch invoices on component mount
-  useEffect(() => {
+  useAuthenticatedEffect(() => {
     dispatch(fetchInvoices());
-  }, [dispatch]);
+  });
 
-  // Fetch company details from API
-  useEffect(() => {
-    const fetchCompanies = async () => {
+  useAuthenticatedEffect(() => {
+    const loadCompanies = async () => {
       try {
-        const headers: HeadersInit = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch(`${API_BASE}/Material/GetCompanies`, { headers });
-        const json = await res.json();
+        const json = await materialApi.getCompanies();
         if (Array.isArray(json?.Data)) {
           setCompanies(json.Data);
         }
-      } catch (e) {
-        console.error('Failed to fetch companies:', e);
+      } catch {
+        // Company details are optional for list view
       }
     };
-    fetchCompanies();
-  }, [token, API_BASE]);
+    loadCompanies();
+  });
 
   React.useEffect(() => {
     const today = new Date();
@@ -255,9 +233,9 @@ const Invoices: React.FC = () => {
       const opt = {
         margin:       0.5,
         filename:     `Invoice_${downloadInvoice.invoiceNumber || downloadInvoice.id}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
+        image:        { type: 'jpeg' as const, quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' as const }
       };
       
       setTimeout(() => {
@@ -319,7 +297,7 @@ const Invoices: React.FC = () => {
                 const co = companies.length > 0 ? companies[0] : null;
                 const coName = co?.Name ;
                 const coAddress = co?.Address ;
-                const coGST = co?.GSTNO ;
+                const coGST = co?.GSTNo ?? co?.GSTNO;
                 const coState = co?.State;
                 const coCode = co?.StateCode;
                 const coEmail = co?.Email;

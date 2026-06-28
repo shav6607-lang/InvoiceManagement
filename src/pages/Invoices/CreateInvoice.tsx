@@ -23,7 +23,6 @@ import {
 import { Add, Delete, ArrowBack } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 
 type Company = {
   CompanyId: number;
@@ -45,11 +44,11 @@ type Company = {
   HSNCode?: string;
   InvoiceNum?: string;
 };
-import { addInvoice, type InvoiceItem } from '../../redux/slices/invoiceSlice';
+import { type InvoiceItem } from '../../redux/slices/invoiceSlice';
+import { invoiceApi, materialApi } from '@/services/api';
+import { useAuthenticatedEffect } from '@/hooks/useAuthenticatedEffect';
+import { getErrorMessage } from '@/utils/errors';
 import { v4 as uuidv4 } from 'uuid';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
-
 
 const STATE_CODES: Record<string, string> = {
   'Andhra Pradesh': '28',
@@ -129,8 +128,6 @@ type FormData = {
 
 const CreateInvoice: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const { token } = useAppSelector((state) => state.auth);
 
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [materials, setMaterials] = useState<any[]>([]);
@@ -171,16 +168,12 @@ const CreateInvoice: React.FC = () => {
     setValue('buyerStateCode', stateCode);
   };
 
-  useEffect(() => {
-    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
-    
-    fetch(`${API_BASE}/Material/GetCompanies`, { headers })
-      .then((r) => r.json())
-      .then((data) => {	
+  useAuthenticatedEffect(() => {
+    materialApi.getCompanies()
+      .then((data) => {
         if (Array.isArray(data?.Data) && data.Data.length > 0) {
           const company = data.Data[0];
           setSelectedCompany(company);
-          // Set invoice number from company and HSN code
           if (company.InvoiceNum) {
             setValue('invoiceNumber', company.InvoiceNum);
           }
@@ -193,8 +186,7 @@ const CreateInvoice: React.FC = () => {
         setSelectedCompany(null);
       });
 
-    fetch(`${API_BASE}/Material/GetList?companyId=1&materialType=1`, { headers })
-      .then((r) => r.json())
+    materialApi.getList({ companyId: 1, materialType: 1 })
       .then((data) => {
         if (Array.isArray(data?.Data)) {
           setMaterials(data.Data);
@@ -203,7 +195,7 @@ const CreateInvoice: React.FC = () => {
       .catch(() => {
         setMaterials([]);
       });
-  }, [token, setValue]);
+  }, [setValue]);
 
   const recalcItem = useCallback((item: InvoiceItem, tax: 'none' | '5' | '18', taxPct?: { none: number; cgst: number; igst: number }): InvoiceItem => {
     const pct = taxPct || taxPercentage;
@@ -344,29 +336,11 @@ const CreateInvoice: React.FC = () => {
     };
 
     try {
-      const response = await fetch(`${API_BASE}/Invoice/AddInvoice`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-      const text = await response.text();
-      let responseData = null;
-      try {
-        responseData = text ? JSON.parse(text) : null;
-      } catch {
-        // ignore
-      }
-      if (!response.ok) {
-        const message = responseData?.Message || responseData?.message || text || 'Failed to submit invoice.';
-        throw new Error(message);
-      }
+      await invoiceApi.add(payload);
       setSaveSuccess(true);
       setTimeout(() => navigate('/invoices'), 1200);
-    } catch (error: any) {
-      setApiError(error?.message || 'Unable to submit invoice.');
+    } catch (error: unknown) {
+      setApiError(getErrorMessage(error, 'Unable to submit invoice.'));
     } finally {
       setSaving(false);
     }

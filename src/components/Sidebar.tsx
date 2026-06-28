@@ -21,14 +21,15 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { logout } from '../redux/slices/authSlice';
+import { logout } from '@/redux/slices/authSlice';
+import { ROUTES } from '@/constants';
 
 const drawerWidth = 260;
 
 const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Invoices', icon: <ReceiptIcon />, path: '/invoices' },
-  { text: 'DC', icon: <ShippingIcon />, path: '/dc' },
+  { text: 'Dashboard', icon: <DashboardIcon />, path: ROUTES.DASHBOARD },
+  { text: 'Invoices', icon: <ReceiptIcon />, path: ROUTES.INVOICES },
+  { text: 'DC', icon: <ShippingIcon />, path: ROUTES.DC },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -42,7 +43,7 @@ export const Sidebar: React.FC = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/login');
+    navigate(ROUTES.LOGIN);
   };
 
   return (
